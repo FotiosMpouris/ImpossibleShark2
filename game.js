@@ -27,8 +27,8 @@ const eric = {
     walking: true,
     punching: false,
     punchDuration: 0,
-    punchHitboxWidth: 200,  // Increased from 100 to 200
-    punchHitboxOffset: 800  // Increased from 700 to 800
+    punchHitboxWidth: 200,
+    punchHitboxOffset: 800
 };
 
 // Eric's walking animation
@@ -80,13 +80,6 @@ const mickeyNoises = [
 ];
 let currentMickeyNoiseIndex = 0;
 const curseSound = new Audio('assets/Curse.mp3');
-
-// Error handling for audio loading
-[punchSound, ...mickeyNoises, curseSound].forEach(audio => {
-    audio.onerror = function() {
-        console.error(`Failed to load audio: ${audio.src}`);
-    };
-});
 
 function createMickey() {
     return {
@@ -258,42 +251,13 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Asset loading
-let assetsLoaded = 0;
-const totalAssets = ericImages.length + ericPunchImages.length + punchEffects.length + 
-                    mickeyImages.length + mickeyNoises.length + 3; // +3 for background, mickeyHit, and curseSound
+// Start the game loop once the background image is loaded
+backgroundImage.onload = function() {
+    console.log("Background image loaded, starting game loop");
+    gameLoop();
+};
 
-function assetLoaded() {
-    assetsLoaded++;
-    if (assetsLoaded === totalAssets) {
-        console.log("All assets loaded, starting game loop");
-        gameLoop();
-    }
-}
-
-// Load images
-[...ericImages, ...ericPunchImages, ...punchEffects, ...mickeyImages, mickeyHitImage, backgroundImage].forEach(img => {
-    if (img.complete) {
-        assetLoaded();
-    } else {
-        img.onload = assetLoaded;
-        img.onerror = () => console.error(`Failed to load image: ${img.src}`);
-    }
-});
-
-// Load audio
-[punchSound, ...mickeyNoises, curseSound].forEach(audio => {
-    audio.oncanplaythrough = assetLoaded;
-    audio.onerror = () => console.error(`Failed to load audio: ${audio.src}`);
-});
-
-// Error handling for canvas
-if (!canvas) {
-    console.error("Canvas element not found. Check if the id 'gameCanvas' exists in your HTML.");
-}
-
-console.log("Game script finished loading, waiting for assets");
-
+console.log("Game script finished loading, waiting for background image");
 // // Debugging: Log when the script starts
 // console.log("Game script started");
 
