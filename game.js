@@ -17,7 +17,7 @@ let backgroundX = 0;
 
 // Eric character
 const eric = {
-    x: 50,
+    x: -300,
     y: canvas.height - GROUND_HEIGHT - 400,
     width: 900,
     height: 500,
@@ -27,8 +27,8 @@ const eric = {
     walking: true,
     punching: false,
     punchDuration: 0,
-    punchHitboxWidth: 100,
-    punchHitboxOffset: 700
+    punchHitboxWidth: 200,  // Increased from 100 to 200
+    punchHitboxOffset: 800  // Increased from 700 to 800
 };
 
 // Eric's walking animation
@@ -40,10 +40,7 @@ for (let i = 1; i <= 8; i++) {
 }
 
 // Eric's punch images
-const ericPunchImages = [
-    new Image(),
-    new Image()
-];
+const ericPunchImages = [new Image(), new Image()];
 ericPunchImages[0].src = 'assets/EricPunch.png';
 ericPunchImages[1].src = 'assets/EricPunch2.png';
 
@@ -261,27 +258,41 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Debugging: Log when all assets are loaded
-Promise.all([
-    ...ericImages, 
-    ...ericPunchImages,
-    ...punchEffects,
-    ...mickeyImages, 
-    mickeyHitImage, 
-    backgroundImage
-].map(img => new Promise(resolve => {
-    if (img.complete) resolve();
-    else img.onload = resolve;
-})))
-.then(() => {
-    console.log("All images loaded, starting game loop");
-    gameLoop();
-})
-.catch(error => {
-    console.error("Error loading images:", error);
+// Asset loading
+let assetsLoaded = 0;
+const totalAssets = ericImages.length + ericPunchImages.length + punchEffects.length + 
+                    mickeyImages.length + mickeyNoises.length + 3; // +3 for background, mickeyHit, and curseSound
+
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        console.log("All assets loaded, starting game loop");
+        gameLoop();
+    }
+}
+
+// Load images
+[...ericImages, ...ericPunchImages, ...punchEffects, ...mickeyImages, mickeyHitImage, backgroundImage].forEach(img => {
+    if (img.complete) {
+        assetLoaded();
+    } else {
+        img.onload = assetLoaded;
+        img.onerror = () => console.error(`Failed to load image: ${img.src}`);
+    }
 });
 
-console.log("Game script finished loading");
+// Load audio
+[punchSound, ...mickeyNoises, curseSound].forEach(audio => {
+    audio.oncanplaythrough = assetLoaded;
+    audio.onerror = () => console.error(`Failed to load audio: ${audio.src}`);
+});
+
+// Error handling for canvas
+if (!canvas) {
+    console.error("Canvas element not found. Check if the id 'gameCanvas' exists in your HTML.");
+}
+
+console.log("Game script finished loading, waiting for assets");
 
 // // Debugging: Log when the script starts
 // console.log("Game script started");
