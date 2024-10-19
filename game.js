@@ -17,7 +17,7 @@ let backgroundX = 0;
 
 // Eric character
 const eric = {
-    x: -100,
+    x: -300,
     y: canvas.height - GROUND_HEIGHT - 400,
     width: 900,
     height: 500,
