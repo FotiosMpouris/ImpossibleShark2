@@ -39,20 +39,12 @@ for (let i = 1; i <= 8; i++) {
     ericImages.push(img);
 }
 
-// Eric's punch images
+// Eric's punch image
 const ericPunchImage1 = new Image();
-ericPunchImage1.src = 'assets/EricPunch.png';
+ericPunchImage1.src = 'assets/ericPunch.png';
 const ericPunchImage2 = new Image();
 ericPunchImage2.src = 'assets/EricPunch2.png';
 let currentPunchImage = ericPunchImage1;
-
-// Punch effect animations
-const punchEffects = [];
-for (let i = 1; i <= 3; i++) {
-    const img = new Image();
-    img.src = `assets/PunchEffect${i}.png`;
-    punchEffects.push(img);
-}
 
 // Mickey character
 const mickey = {
@@ -67,9 +59,7 @@ const mickey = {
     hitDuration: 0,
     staggerDistance: 50,
     hitboxWidth: 100,
-    hitboxOffset: 400,
-    punchEffectIndex: -1,
-    punchEffectDuration: 0
+    hitboxOffset: 400
 };
 
 // Mickey's walking animation
@@ -151,7 +141,7 @@ function updateMickey() {
     if (mickey.visible) {
         switch(mickey.state) {
             case 'walking':
-                mickey.x -= mickey.speed * gameSpeed;
+                mickey.x -= mickey.speed;
                 if (frameCount % 5 === 0) {
                     mickey.frameX = (mickey.frameX + 1) % 21;
                 }
@@ -168,7 +158,6 @@ function updateMickey() {
                 } else if (mickey.hitDuration > 60) {
                     mickey.state = 'walking';
                     mickey.hitDuration = 0;
-                    mickey.punchEffectIndex = -1;
                 }
                 break;
         }
@@ -181,15 +170,6 @@ function updateMickey() {
             mickey.x + mickey.hitboxOffset + mickey.hitboxWidth > eric.x + eric.punchHitboxOffset) {
             hitMickey();
         }
-
-        // Update punch effect
-        if (mickey.punchEffectIndex !== -1) {
-            mickey.punchEffectDuration++;
-            if (mickey.punchEffectDuration > 30) {
-                mickey.punchEffectIndex = -1;
-                mickey.punchEffectDuration = 0;
-            }
-        }
     }
 }
 
@@ -198,8 +178,6 @@ function hitMickey() {
     mickey.hitDuration = 0;
     mickeyNoises[currentMickeyNoiseIndex].play().catch(e => console.error("Error playing Mickey noise:", e));
     currentMickeyNoiseIndex = (currentMickeyNoiseIndex + 1) % mickeyNoises.length;
-    mickey.punchEffectIndex = Math.floor(Math.random() * 3);
-    mickey.punchEffectDuration = 0;
     score++;
 }
 
@@ -231,14 +209,6 @@ function drawMickey() {
         } else if (mickey.state === 'hit') {
             ctx.drawImage(mickeyHitImage, mickey.x, mickey.y, mickey.width, mickey.height);
         }
-
-        // Draw punch effect
-        if (mickey.punchEffectIndex !== -1) {
-            ctx.drawImage(punchEffects[mickey.punchEffectIndex], 
-                mickey.x + mickey.width / 2 - 100, 
-                mickey.y + mickey.height / 2 - 100, 
-                200, 200);
-        }
     }
 }
 
@@ -254,7 +224,6 @@ document.addEventListener('keydown', (event) => {
         eric.punching = true;
         eric.punchDuration = 0;
         currentPunchImage = Math.random() < 0.5 ? ericPunchImage1 : ericPunchImage2;
-        punchSound.play().catch(e => console.error("Error playing punch sound:", e));
     }
 });
 
@@ -265,8 +234,7 @@ Promise.all([
     ericPunchImage2,
     ...mickeyImages, 
     mickeyHitImage, 
-    backgroundImage,
-    ...punchEffects
+    backgroundImage
 ].map(img => new Promise(resolve => {
     if (img.complete) resolve();
     else img.onload = resolve;
@@ -281,7 +249,7 @@ Promise.all([
 
 console.log("Game script finished loading");
 
-// // Debugging: Log when the script starts
+// Debugging: Log when the script starts
 // console.log("Game script started");
 
 // const canvas = document.getElementById('gameCanvas');
