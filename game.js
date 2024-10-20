@@ -5,7 +5,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game variables
-let gameSpeed = 1;
+let gameSpeed = 5;
 const GROUND_HEIGHT = 100;
 let score = 0;
 let frameCount = 0;
