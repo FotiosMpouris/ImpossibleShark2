@@ -147,7 +147,7 @@ function gameLoop() {
         drawBonus();
     }
 
-    gameSpeed += 0.001;
+    gameSpeed += 0.0001;
 
     requestAnimationFrame(gameLoop);
 }
