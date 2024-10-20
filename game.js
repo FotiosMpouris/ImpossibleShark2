@@ -5,7 +5,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game variables
-let gameSpeed = 5;
+let gameSpeed = 1;
 const GROUND_HEIGHT = 100;
 let score = 0;
 let frameCount = 0;
@@ -147,7 +147,7 @@ function gameLoop() {
         drawBonus();
     }
 
-    gameSpeed += 0.0001;
+    gameSpeed += 0.001;
 
     requestAnimationFrame(gameLoop);
 }
