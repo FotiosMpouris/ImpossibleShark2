@@ -1,18 +1,8 @@
-// Console log for script start
 console.log("Game script started");
 
-// Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('gameCanvas');
-    if (!canvas) {
-        console.error("Canvas element not found");
-        return;
-    }
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error("Could not get 2D context from canvas");
-        return;
-    }
 
     // Game variables
     let gameSpeed = 1;
@@ -25,15 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let scoreColor = 'black';
     let showInstructions = true;
 
-    // Background image
-   // Background images
-const oceanBackground = new Image();
-oceanBackground.src = 'assets/ImpossibleLoop01.png';
-let oceanBackgroundX = 0;
+    // Background images
+    const oceanBackground = new Image();
+    oceanBackground.src = 'assets/ImpossibleLoop01.png';
+    let oceanBackgroundX = 0;
 
-const cloudBackground = new Image();
-cloudBackground.src = 'assets/ImpossibleClouds01.png';
-let cloudBackgroundX = 0;
+    const cloudBackground = new Image();
+    cloudBackground.src = 'assets/ImpossibleClouds01.png';
+    let cloudBackgroundX = 0;
 
     // Eric character
     const eric = {
@@ -144,7 +133,7 @@ let cloudBackgroundX = 0;
         console.error(`Failed to load ${name}: ${asset.src || asset.currentSrc}`);
     }
 
-    [backgroundImage, ...ericImages, ericPunchImage1, ericPunchImage2, ...punchEffects, 
+    [oceanBackground, cloudBackground, ...ericImages, ericPunchImage1, ericPunchImage2, ...punchEffects, 
      ...mickeyImages, mickeyHitImage, ...mickeyDieImages, bonusImage].forEach(img => {
         img.onerror = () => handleAssetError(img, 'image');
     });
@@ -165,7 +154,6 @@ let cloudBackgroundX = 0;
 
     // Game loop
     function gameLoop() {
-        console.log("Entering gameLoop");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         updateBackground();
@@ -184,24 +172,21 @@ let cloudBackgroundX = 0;
 
         gameSpeed += 0.0001;
 
-        console.log("Finished drawing, requesting next animation frame");
         requestAnimationFrame(gameLoop);
     }
 
     // Update functions
     function updateBackground() {
-    // Update ocean background
-    oceanBackgroundX -= gameSpeed;
-    if (oceanBackgroundX <= -canvas.width) {
-        oceanBackgroundX = 0;
-    }
+        oceanBackgroundX -= gameSpeed;
+        if (oceanBackgroundX <= -canvas.width) {
+            oceanBackgroundX = 0;
+        }
 
-    // Update cloud background (slower speed)
-    cloudBackgroundX -= gameSpeed * 0.5; // Adjust this factor to change relative speed
-    if (cloudBackgroundX <= -canvas.width) {
-        cloudBackgroundX = 0;
+        cloudBackgroundX -= gameSpeed * 0.5;
+        if (cloudBackgroundX <= -canvas.width) {
+            cloudBackgroundX = 0;
+        }
     }
-}
 
     function updateEric() {
         if (eric.walking && !eric.punching) {
@@ -306,14 +291,11 @@ let cloudBackgroundX = 0;
 
     // Draw functions
     function drawBackground() {
-    // Draw cloud background
-    ctx.drawImage(cloudBackground, cloudBackgroundX, 0, canvas.width, canvas.height);
-    ctx.drawImage(cloudBackground, cloudBackgroundX + canvas.width, 0, canvas.width, canvas.height);
-
-    // Draw ocean background on top of clouds
-    ctx.drawImage(oceanBackground, oceanBackgroundX, 0, canvas.width, canvas.height);
-    ctx.drawImage(oceanBackground, oceanBackgroundX + canvas.width, 0, canvas.width, canvas.height);
-}
+        ctx.drawImage(cloudBackground, cloudBackgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(cloudBackground, cloudBackgroundX + canvas.width, 0, canvas.width, canvas.height);
+        ctx.drawImage(oceanBackground, oceanBackgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(oceanBackground, oceanBackgroundX + canvas.width, 0, canvas.width, canvas.height);
+    }
 
     function drawEric() {
         if (eric.punching) {
@@ -353,20 +335,20 @@ let cloudBackgroundX = 0;
     }
 
     function drawInstructions() {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - gameStartTime;
-    
-    if (elapsedTime < 10000) { // Show for 10 seconds
-        // Change state every 1 second (1000 milliseconds)
-        showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - gameStartTime;
         
-        if (showInstructions) {
-            ctx.fillStyle = 'red';
-            ctx.font = '24px Arial';
-            ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+        if (elapsedTime < 10000) { // Show for 10 seconds
+            // Change state every 1 second (1000 milliseconds)
+            showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+            
+            if (showInstructions) {
+                ctx.fillStyle = 'red';
+                ctx.font = '24px Arial';
+                ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+            }
         }
     }
-}
 
     function drawBonus() {
         ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
@@ -394,65 +376,62 @@ let cloudBackgroundX = 0;
 
     // Asset loading and game initialization
     Promise.all([
-    ...ericImages, 
-    ericPunchImage1,
-    ericPunchImage2,
-    ...mickeyImages, 
-    mickeyHitImage,
-    ...mickeyDieImages,
-    ...punchEffects,
-    new Promise(resolve => {
-        cloudBackground.onload = resolve;
-        cloudBackground.onerror = () => {
-            console.error("Failed to load cloud background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    new Promise(resolve => {
-        oceanBackground.onload = resolve;
-        oceanBackground.onerror = () => {
-            console.error("Failed to load ocean background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    bonusImage,
-    new Promise(resolve => {
-        gameMusic.addEventListener('canplaythrough', resolve, { once: true });
-        gameMusic.addEventListener('error', (e) => {
-            console.error("Error loading game music:", e);
-            resolve();
-        });
-    }),
-    new Promise(resolve => {
-        deathSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        bonusSound.addEventListener('canplaythrough', resolve, { once: true });
+        ...ericImages, 
+        ericPunchImage1,
+        ericPunchImage2,
+        ...mickeyImages, 
+        mickeyHitImage,
+        ...mickeyDieImages,
+        ...punchEffects,
+        new Promise(resolve => {
+            cloudBackground.onload = resolve;
+            cloudBackground.onerror = () => {
+                console.error("Failed to load cloud background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        new Promise(resolve => {
+            oceanBackground.onload = resolve;
+            oceanBackground.onerror = () => {
+                console.error("Failed to load ocean background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        bonusImage,
+        new Promise(resolve => {
+            gameMusic.addEventListener('canplaythrough', resolve, { once: true });
+            gameMusic.addEventListener('error', (e) => {
+                console.error("Error loading game music:", e);
+                resolve();
+            });
+        }),
+        new Promise(resolve => {
+            deathSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            bonusSound.addEventListener('canplaythrough', resolve, { once: true });
+        })
+    ].map(asset => {
+        if (asset instanceof HTMLImageElement) {
+            return new Promise(resolve => {
+                if (asset.complete) resolve();
+                else asset.onload = resolve;
+            });
+        }
+        return asset;
+    }))
+    .then(() => {
+        console.log("All assets loaded, starting game loop");
+        startGameMusic();
+        gameLoop();
     })
-].map(asset => {
-    if (asset instanceof HTMLImageElement) {
-        return new Promise(resolve => {
-            if (asset.complete) resolve();
-            else asset.onload = resolve;
-        });
-    }
-    return asset;
-}))
-.then(() => {
-    console.log("All assets loaded, starting game loop");
-    startGameMusic();
-    gameLoop();
-})
-.catch(error => {
-    console.error("Error during game initialization:", error);
-    // You might want to display an error message to the user here
+    .catch(error => {
+        console.error("Error during game initialization:", error);
+        // You might want to display an error message to the user here
+    });
+
+    console.log("Game script finished loading");
 });
-
-console.log("Game script finished loading");
-
-});
-
-
 
 // // Console log for script start
 // console.log("Game script started");
