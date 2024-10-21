@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Eric character
     const eric = {
-        x: 100, // Moved Eric to the left side
+        x: -300, // Original position near the left side
         y: canvas.height - GROUND_HEIGHT - 400,
         width: 900,
         height: 500,
@@ -113,10 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const crab = {
         x: canvas.width,
         y: canvas.height - GROUND_HEIGHT - 50,
-        width: 100,
-        height: 50,
+        width: 200,
+        height: 100,
         frameX: 0,
-        speed: 5,
+        speed: 3,
         visible: false
     };
 
@@ -201,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         gameSpeed += 0.0001;
+        frameCount++;
 
         requestAnimationFrame(gameLoop);
     }
@@ -238,7 +239,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 eric.pinchedDuration = 0;
             }
         }
-        frameCount++;
     }
 
     function updateMickey() {
@@ -286,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 mickey.state === 'walking' &&
                 mickey.x + mickey.hitboxOffset < eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth &&
                 mickey.x + mickey.hitboxOffset + mickey.hitboxWidth > eric.x + eric.punchHitboxOffset) {
-                // Adjust Mickey's position to be closer to Eric's fist
                 mickey.x = eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth - mickey.hitboxOffset - mickey.hitboxWidth + 50;
                 hitMickey();
             }
@@ -300,15 +299,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 crab.frameX = (crab.frameX + 1) % 5;
             }
             // Check for collision with Eric
-            if (crab.x < eric.x + eric.width) {
+            if (crab.x < eric.x + eric.width && !eric.pinched) {
                 eric.pinched = true;
                 eric.pinchedDuration = 0;
                 ericOuchSound.play().catch(e => console.error("Error playing Eric ouch sound:", e));
-                crab.visible = false; // Make crab disappear after pinching Eric
             }
             if (crab.x + crab.width < 0) {
                 crab.visible = false;
             }
+        } else if (Math.random() < 0.005 && !eric.pinched) { // 0.5% chance each frame to spawn crab
+            crab.x = canvas.width;
+            crab.visible = true;
         }
     }
 
@@ -327,10 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 showBonus = true;
                 bonusTimer = 60;
             }, 1000);
-            if (Math.random() < 0.5 && !crab.visible) { // 50% chance to spawn crab after Mickey dies
-                crab.x = canvas.width;
-                crab.visible = true;
-            }
         } else {
             mickey.state = 'hit';
             mickey.hitDuration = 0;
@@ -379,135 +376,134 @@ document.addEventListener('DOMContentLoaded', function() {
                     ctx.drawImage(mickeyHitImage, mickey.x, mickey.y, mickey.width, mickey.height);
                     break;
                 case 'dying':
-                ctx.drawImage(mickeyDieImages[mickey.deathFrame], mickey.x, mickey.y, mickey.width, mickey.height);
-                break;
-        }
+                    ctx.drawImage(mickeyDieImages[mickey.deathFrame], mickey.x, mickey.y, mickey.width, mickey.height);
+                    break;
+            }
 
-        if (mickey.punchEffectIndex !== -1) {
-            ctx.drawImage(punchEffects[mickey.punchEffectIndex], 
-                mickey.x + mickey.width / 2 - 100, 
-                mickey.y + mickey.height / 2 - 100, 
-                200, 200);
+            if (mickey.punchEffectIndex !== -1) {
+                ctx.drawImage(punchEffects[mickey.punchEffectIndex], 
+                    mickey.x + mickey.width / 2 - 100, 
+                    mickey.y + mickey.height / 2 - 100, 
+                    200, 200);
+            }
         }
     }
-}
 
-function drawCrab() {
-    if (crab.visible) {
-        ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
+    function drawCrab() {
+        if (crab.visible) {
+            ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
+        }
     }
-}
 
-function drawScore() {
-    ctx.fillStyle = scoreColor;
-    ctx.font = '20px Arial';
-    ctx.fillText(`Score: ${score}`, 10, 30);
-}
+    function drawScore() {
+        ctx.fillStyle = scoreColor;
+        ctx.font = '20px Arial';
+        ctx.fillText(`Score: ${score}`, 10, 30);
+    }
 
-function drawInstructions() {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - gameStartTime;
-    
-    if (elapsedTime < 10000) { // Show for 10 seconds
-        // Change state every 1 second (1000 milliseconds)
-        showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+    function drawInstructions() {
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - gameStartTime;
         
-        if (showInstructions) {
-            ctx.fillStyle = 'red';
-            ctx.font = '24px Arial';
-            ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+        if (elapsedTime < 10000) { // Show for 10 seconds
+            // Change state every 1 second (1000 milliseconds)
+            showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+            
+            if (showInstructions) {
+                ctx.fillStyle = 'red';
+                ctx.font = '24px Arial';
+                ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+            }
         }
     }
-}
 
-function drawBonus() {
-    ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
-    bonusTimer--;
-    if (bonusTimer <= 0) {
-        showBonus = false;
+    function drawBonus() {
+        ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
+        bonusTimer--;
+        if (bonusTimer <= 0) {
+            showBonus = false;
+        }
     }
-}
 
-// Event listeners
-document.addEventListener('keydown', (event) => {
-    if (event.code === 'Space' && !eric.punching) {
-        eric.punching = true;
-        eric.punchDuration = 0;
-        currentPunchImage = Math.random() < 0.5 ? ericPunchImage1 : ericPunchImage2;
-        punchSound.play().catch(e => console.error("Error playing punch sound:", e));
-    }
-});
+    // Event listeners
+    document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space' && !eric.punching) {
+            eric.punching = true;
+            eric.punchDuration = 0;
+            currentPunchImage = Math.random() < 0.5 ? ericPunchImage1 : ericPunchImage2;
+            punchSound.play().catch(e => console.error("Error playing punch sound:", e));
+        }
+    });
 
-document.addEventListener('keydown', () => {
-    if (gameMusic.paused) {
+    document.addEventListener('keydown', () => {
+        if (gameMusic.paused) {
+            startGameMusic();
+        }
+    });
+
+    // Asset loading and game initialization
+    Promise.all([
+        ...ericImages, 
+        ericPunchImage1,
+        ericPunchImage2,
+        ...mickeyImages, 
+        mickeyHitImage,
+        ...mickeyDieImages,
+        ...punchEffects,
+        ...crabImages,
+        ericPinchedImage,
+        new Promise(resolve => {
+            cloudBackground.onload = resolve;
+            cloudBackground.onerror = () => {
+                console.error("Failed to load cloud background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        new Promise(resolve => {
+            oceanBackground.onload = resolve;
+            oceanBackground.onerror = () => {
+                console.error("Failed to load ocean background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        bonusImage,
+        new Promise(resolve => {
+            gameMusic.addEventListener('canplaythrough', resolve, { once: true });
+            gameMusic.addEventListener('error', (e) => {
+                console.error("Error loading game music:", e);
+                resolve();
+            });
+        }),
+        new Promise(resolve => {
+            deathSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            bonusSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
+        })
+    ].map(asset => {
+        if (asset instanceof HTMLImageElement) {
+            return new Promise(resolve => {
+                if (asset.complete) resolve();
+                else asset.onload = resolve;
+            });
+        }
+        return asset;
+    }))
+    .then(() => {
+        console.log("All assets loaded, starting game loop");
         startGameMusic();
-    }
-});
-
-// Asset loading and game initialization
-Promise.all([
-    ...ericImages, 
-    ericPunchImage1,
-    ericPunchImage2,
-    ...mickeyImages, 
-    mickeyHitImage,
-    ...mickeyDieImages,
-    ...punchEffects,
-    ...crabImages,
-    ericPinchedImage,
-    new Promise(resolve => {
-        cloudBackground.onload = resolve;
-        cloudBackground.onerror = () => {
-            console.error("Failed to load cloud background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    new Promise(resolve => {
-        oceanBackground.onload = resolve;
-        oceanBackground.onerror = () => {
-            console.error("Failed to load ocean background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    bonusImage,
-    new Promise(resolve => {
-        gameMusic.addEventListener('canplaythrough', resolve, { once: true });
-        gameMusic.addEventListener('error', (e) => {
-            console.error("Error loading game music:", e);
-            resolve();
-        });
-    }),
-    new Promise(resolve => {
-        deathSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        bonusSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
+        gameLoop();
     })
-].map(asset => {
-    if (asset instanceof HTMLImageElement) {
-        return new Promise(resolve => {
-            if (asset.complete) resolve();
-            else asset.onload = resolve;
-        });
-    }
-    return asset;
-}))
-.then(() => {
-    console.log("All assets loaded, starting game loop");
-    startGameMusic();
-    gameLoop();
-})
-.catch(error => {
-    console.error("Error during game initialization:", error);
-    // You might want to display an error message to the user here
-});
+    .catch(error => {
+        console.error("Error during game initialization:", error);
+        // You might want to display an error message to the user here
+    });
 
-console.log("Game script finished loading");
+    console.log("Game script finished loading");
 });
-// console.log("Game script started");
 
 // document.addEventListener('DOMContentLoaded', function() {
 //     const canvas = document.getElementById('gameCanvas');
