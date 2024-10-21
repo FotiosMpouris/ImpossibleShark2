@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let mickeyHitCount = 0;
     let scoreColor = 'black';
     let showInstructions = true;
+    let crabTimer = 0;
+const CRAB_SPAWN_INTERVAL = 1200; // 20 seconds (60 fps * 20)
 
     // Background images
     const oceanBackground = new Image();
@@ -111,14 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Crab character
     const crab = {
-        x: canvas.width,
-        y: canvas.height - GROUND_HEIGHT - 50,
-        width: 200,
-        height: 100,
-        frameX: 0,
-        speed: 3,
-        visible: false
-    };
+    x: canvas.width,
+    y: canvas.height - GROUND_HEIGHT - 500, // Adjusted for larger size
+    width: 2000, // 10 times larger
+    height: 1000, // 10 times larger
+    frameX: 0,
+    speed: 1, // Reduced speed due to larger size
+    visible: false
+};
 
     // Crab walking animation
     const crabImages = [];
@@ -234,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (eric.pinched) {
             eric.pinchedDuration++;
-            if (eric.pinchedDuration > 60) { // Pinched for 1 second (60 frames)
+            if (eric.pinchedDuration > 120) { // Increased to 2 seconds (120 frames)
                 eric.pinched = false;
                 eric.pinchedDuration = 0;
             }
@@ -293,25 +295,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCrab() {
-        if (crab.visible) {
-            crab.x -= crab.speed;
-            if (frameCount % 10 === 0) {
-                crab.frameX = (crab.frameX + 1) % 5;
-            }
-            // Check for collision with Eric
-            if (crab.x < eric.x + eric.width && !eric.pinched) {
-                eric.pinched = true;
-                eric.pinchedDuration = 0;
-                ericOuchSound.play().catch(e => console.error("Error playing Eric ouch sound:", e));
-            }
-            if (crab.x + crab.width < 0) {
-                crab.visible = false;
-            }
-        } else if (Math.random() < 0.005 && !eric.pinched) { // 0.5% chance each frame to spawn crab
+    if (crab.visible) {
+        crab.x -= crab.speed;
+        if (frameCount % 10 === 0) {
+            crab.frameX = (crab.frameX + 1) % 5;
+        }
+        // Check for collision with Eric
+        if (crab.x <= eric.x + eric.width + 50 && !eric.pinched) {
+            eric.pinched = true;
+            eric.pinchedDuration = 0;
+            ericOuchSound.play().catch(e => console.error("Error playing Eric ouch sound:", e));
+        }
+        if (crab.x + crab.width < 0) {
+            crab.visible = false;
+        }
+    } else {
+        crabTimer++;
+        if (crabTimer >= CRAB_SPAWN_INTERVAL) {
             crab.x = canvas.width;
             crab.visible = true;
+            crabTimer = 0;
         }
     }
+}
 
     function hitMickey() {
         mickeyHitCount++;
@@ -390,10 +396,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawCrab() {
-        if (crab.visible) {
-            ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
-        }
+    if (crab.visible) {
+        ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
     }
+}
 
     function drawScore() {
         ctx.fillStyle = scoreColor;
