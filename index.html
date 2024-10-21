@@ -5,6 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impossible Shark</title>
     <style>
+        body {
+            background-color: #87CEEB; /* Sky blue background */
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 3px solid #1E90FF; /* Dodger blue border */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+        }
+        h1 {
+            color: #1E90FF;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .instructions {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #1E90FF;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .ocean-waves {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: url('assets/ocean-waves.png') repeat-x;
+            animation: wave 10s linear infinite;
+            z-index: -1;
+        }
+        @keyframes wave {
+            0% { background-position: 0 0; }
+            100% { background-position: 1000px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ocean-waves"></div>
+    <div class="game-container">
+        <h1>Impossible Shark</h1>
+        <canvas id="gameCanvas" width="900" height="500"></canvas>
+        <div class="instructions">
+            <p>Use the spacebar to punch and survive as long as you can!</p>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impossible Shark</title>
+    <style>
         canvas {
             border: 1px solid black;
             display: block;
@@ -17,3 +91,4 @@
     <script src="game.js"></script>
 </body>
 </html>
+ -->
