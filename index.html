@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impossible Shark</title>
     <style>
+        :root {
+            --game-aspect-ratio: calc(500 / 900);
+        }
         body {
             background-color: #87CEEB;
             font-family: 'Arial', sans-serif;
@@ -24,29 +27,35 @@
             text-align: center;
             position: relative;
             z-index: 1;
-            max-width: 95vw;
-            max-height: 95vh;
+            width: 90vw;
+            max-width: 1200px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        canvas {
+        #gameCanvas {
             border: 3px solid #1E90FF;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
-            max-width: 100%;
+            width: 100%;
             height: auto;
+            aspect-ratio: calc(1 / var(--game-aspect-ratio));
+            max-height: calc(90vh - 150px);
         }
         h1 {
             color: #1E90FF;
-            font-size: 2.5em;
-            margin-bottom: 20px;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
         .instructions {
             background-color: rgba(255, 255, 255, 0.9);
             border: 2px solid #1E90FF;
             border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 1.1em;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: clamp(0.8rem, 2vw, 1.1rem);
             color: #333;
         }
         .ocean-waves {
@@ -55,22 +64,52 @@
             left: 0;
             width: 100%;
             height: 100px;
-            background: url('assets/ocean-waves.png') repeat-x;
-            background-size: auto 100%;
-            animation: wave 10s linear infinite;
             z-index: 0;
+            overflow: hidden;
         }
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background-repeat: repeat-x;
+            background-position: 0 bottom;
+            transform-origin: center bottom;
+        }
+        .wave1 { animation: wave 3s linear infinite; }
+        .wave2 { animation: wave 5s linear infinite; }
+        .wave3 { animation: wave 7s linear infinite; }
+        .wave4 { animation: wave 9s linear infinite; }
+        .wave5 { animation: wave 11s linear infinite; }
+        .wave6 { animation: wave 13s linear infinite; }
+        
+        .wave1 { background-image: url('assets/ocean-waves1.png'); }
+        .wave2 { background-image: url('assets/ocean-waves2.png'); }
+        .wave3 { background-image: url('assets/ocean-waves3.png'); }
+        .wave4 { background-image: url('assets/ocean-waves4.png'); }
+        .wave5 { background-image: url('assets/ocean-waves5.png'); }
+        .wave6 { background-image: url('assets/ocean-waves6.png'); }
+
         @keyframes wave {
-            0% { background-position: 0 0; }
-            100% { background-position: 1000px 0; }
+            0% { transform: translateX(0) translateZ(0) scaleY(1); }
+            50% { transform: translateX(-25%) translateZ(0) scaleY(0.55); }
+            100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
         }
     </style>
 </head>
 <body>
-    <div class="ocean-waves"></div>
+    <div class="ocean-waves">
+        <div class="wave wave1"></div>
+        <div class="wave wave2"></div>
+        <div class="wave wave3"></div>
+        <div class="wave wave4"></div>
+        <div class="wave wave5"></div>
+        <div class="wave wave6"></div>
+    </div>
     <div class="game-container">
         <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas" width="650" height="300"></canvas>
+        <canvas id="gameCanvas"></canvas>
         <div class="instructions">
             <p>Use the spacebar to punch and survive as long as you can!</p>
         </div>
@@ -78,6 +117,8 @@
     <script src="game.js"></script>
 </body>
 </html>
+
+
 <!-- <!DOCTYPE html>
 <html lang="en">
 <head>
