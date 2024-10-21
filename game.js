@@ -114,14 +114,13 @@ const CRAB_SPAWN_INTERVAL = 1200; // 20 seconds (60 fps * 20)
     // Crab character
     const crab = {
     x: canvas.width,
-    y: canvas.height - GROUND_HEIGHT - 500, // Adjusted for larger size
-    width: 2000, // 10 times larger
-    height: 1000, // 10 times larger
+    y: canvas.height - GROUND_HEIGHT - 300, // Adjusted for smaller size
+    width: 1000, // Reduced size
+    height: 500, // Reduced size
     frameX: 0,
-    speed: 1, // Reduced speed due to larger size
+    speed: 2, // Increased speed
     visible: false
 };
-
     // Crab walking animation
     const crabImages = [];
     for (let i = 1; i <= 5; i++) {
@@ -236,7 +235,7 @@ const CRAB_SPAWN_INTERVAL = 1200; // 20 seconds (60 fps * 20)
         }
         if (eric.pinched) {
             eric.pinchedDuration++;
-            if (eric.pinchedDuration > 120) { // Increased to 2 seconds (120 frames)
+            if (eric.pinchedDuration > 30) { // Reduced to 0.5 seconds (30 frames)
                 eric.pinched = false;
                 eric.pinchedDuration = 0;
             }
@@ -300,14 +299,12 @@ const CRAB_SPAWN_INTERVAL = 1200; // 20 seconds (60 fps * 20)
         if (frameCount % 10 === 0) {
             crab.frameX = (crab.frameX + 1) % 5;
         }
-        // Check for collision with Eric
-        if (crab.x <= eric.x + eric.width + 50 && !eric.pinched) {
+        if (crab.x + crab.width < 0) {
+            crab.visible = false;
+            // Trigger Eric's pinched state after crab leaves screen
             eric.pinched = true;
             eric.pinchedDuration = 0;
             ericOuchSound.play().catch(e => console.error("Error playing Eric ouch sound:", e));
-        }
-        if (crab.x + crab.width < 0) {
-            crab.visible = false;
         }
     } else {
         crabTimer++;
