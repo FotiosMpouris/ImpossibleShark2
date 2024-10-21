@@ -5,47 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impossible Shark</title>
     <style>
-        :root {
-            --game-aspect-ratio: calc(500 / 900);
-        }
-        body {
-            background-color: #87CEEB;
-            font-family: 'Arial', sans-serif;
+        body, html {
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            height: 100%;
             overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #87CEEB;
         }
         .game-container {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-            width: 90vw;
-            max-width: 1200px;
-            max-height: 90vh;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+            max-width: 1280px; /* Max width for the game */
+            max-height: 720px; /* Max height for the game */
         }
         #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             border: 3px solid #1E90FF;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
-            width: 100%;
-            height: auto;
-            aspect-ratio: calc(1 / var(--game-aspect-ratio));
-            max-height: calc(90vh - 150px);
         }
         h1 {
             color: #1E90FF;
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            font-size: 2rem;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -55,7 +51,7 @@
             border-radius: 10px;
             padding: 10px;
             margin-top: 10px;
-            font-size: clamp(0.8rem, 2vw, 1.1rem);
+            font-size: 1rem;
             color: #333;
         }
         .ocean-waves {
@@ -64,7 +60,7 @@
             left: 0;
             width: 100%;
             height: 100px;
-            z-index: 0;
+            z-index: -1;
             overflow: hidden;
         }
         .wave {
@@ -80,17 +76,9 @@
         .wave1 { animation: wave 3s linear infinite; }
         .wave2 { animation: wave 5s linear infinite; }
         .wave3 { animation: wave 7s linear infinite; }
-        .wave4 { animation: wave 9s linear infinite; }
-        .wave5 { animation: wave 11s linear infinite; }
-        .wave6 { animation: wave 13s linear infinite; }
-        
         .wave1 { background-image: url('assets/ocean-waves1.png'); }
         .wave2 { background-image: url('assets/ocean-waves2.png'); }
         .wave3 { background-image: url('assets/ocean-waves3.png'); }
-        .wave4 { background-image: url('assets/ocean-waves4.png'); }
-        .wave5 { background-image: url('assets/ocean-waves5.png'); }
-        .wave6 { background-image: url('assets/ocean-waves6.png'); }
-
         @keyframes wave {
             0% { transform: translateX(0) translateZ(0) scaleY(1); }
             50% { transform: translateX(-25%) translateZ(0) scaleY(0.55); }
@@ -103,13 +91,12 @@
         <div class="wave wave1"></div>
         <div class="wave wave2"></div>
         <div class="wave wave3"></div>
-        <div class="wave wave4"></div>
-        <div class="wave wave5"></div>
-        <div class="wave wave6"></div>
     </div>
     <div class="game-container">
         <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas"></canvas>
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
         <div class="instructions">
             <p>Use the spacebar to punch and survive as long as you can!</p>
         </div>
@@ -117,7 +104,6 @@
     <script src="game.js"></script>
 </body>
 </html>
-
 
 <!-- <!DOCTYPE html>
 <html lang="en">
