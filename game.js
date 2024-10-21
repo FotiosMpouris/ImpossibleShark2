@@ -12,6 +12,8 @@ let frameCount = 0;
 let gameStartTime = Date.now();
 const MICKEY_MAX_HITS = 6;
 let mickeyHitCount = 0;
+let scoreColor = 'black';
+let showInstructions = true;
 
 // Background image
 const backgroundImage = new Image();
@@ -46,7 +48,7 @@ for (let i = 1; i <= 8; i++) {
 const ericPunchImage1 = new Image();
 ericPunchImage1.src = 'assets/ericPunch.png';
 const ericPunchImage2 = new Image();
-ericPunchImage2.src = 'assets/ericPunch2.png';
+ericPunchImage2.src = 'assets/EricPunch2.png';
 let currentPunchImage = ericPunchImage1;
 
 // Punch effect animations
@@ -110,7 +112,7 @@ const mickeyNoises = [
 ];
 let currentMickeyNoiseIndex = 0;
 
-// New audio elements
+// Game music setup
 const gameMusic = new Audio('assets/GameMusic.mp3');
 gameMusic.loop = true;
 const deathSound = new Audio('assets/deathSound.mp3');
@@ -128,6 +130,17 @@ let bonusTimer = 0;
         console.error(`Failed to load audio: ${audio.src}`);
     };
 });
+
+// Function to start game music
+function startGameMusic() {
+    gameMusic.play().catch(e => {
+        console.error("Error playing game music:", e);
+        // If autoplay is blocked, we'll need user interaction to start the music
+        document.addEventListener('click', () => {
+            gameMusic.play().catch(e => console.error("Error playing game music after click:", e));
+        }, { once: true });
+    });
+}
 
 // Game loop
 function gameLoop() {
@@ -239,6 +252,8 @@ function hitMickey() {
         setTimeout(() => {
             bonusSound.play().catch(e => console.error("Error playing bonus sound:", e));
             score += 10;  // Add 10 bonus points
+            scoreColor = 'red';  // Change score color to red
+            setTimeout(() => { scoreColor = 'black'; }, 1000);  // Change back to black after 1 second
             showBonus = true;
             bonusTimer = 60;  // Show bonus image for 60 frames (about 1 second)
         }, 1000);  // Wait for 1 second after death sound
@@ -301,7 +316,7 @@ function drawMickey() {
 }
 
 function drawScore() {
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = scoreColor;
     ctx.font = '20px Arial';
     ctx.fillText(`Score: ${score}`, 10, 30);
 }
@@ -309,65 +324,20 @@ function drawScore() {
 function drawInstructions() {
     const currentTime = Date.now();
     if (currentTime - gameStartTime < 10000) {  // 10 seconds
-        ctx.fillStyle = 'black';
-        ctx.font = '24px Arial';
-        ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+        if (showInstructions) {
+            ctx.fillStyle = 'red';
+            ctx.font = '24px Arial';
+            ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+        }
+        // Toggle visibility every 500ms (half a second)
+        if (Math.floor((currentTime - gameStartTime) / 500) % 2 === 0) {
+            showInstructions = !showInstructions;
+        }
     }
 }
 
 function drawBonus() {
-    ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
-    bonusTimer--;
-    if (bonusTimer <= 0) {
-        showBonus = false;
-    }
-}
-
-// Event listeners
-document.addEventListener('keydown', (event) => {
-    if (event.code === 'Space' && !eric.punching) {
-        eric.punching = true;
-        eric.punchDuration = 0;
-        currentPunchImage = Math.random() < 0.5 ? ericPunchImage1 : ericPunchImage2;
-        punchSound.play().catch(e => console.error("Error playing punch sound:", e));
-    }
-});
-
-// Debugging: Log when all assets are loaded
-Promise.all([
-    ...ericImages, 
-    ericPunchImage1,
-    ericPunchImage2,
-    ...mickeyImages, 
-    mickeyHitImage,
-    ...mickeyDieImages,
-    ...punchEffects,
-    backgroundImage,
-    bonusImage,
-    new Promise(resolve => {
-        gameMusic.oncanplaythrough = resolve;
-        deathSound.oncanplaythrough = resolve;
-        bonusSound.oncanplaythrough = resolve;
-    })
-].map(asset => {
-    if (asset instanceof HTMLImageElement) {
-        return new Promise(resolve => {
-            if (asset.complete) resolve();
-            else asset.onload = resolve;
-        });
-    }
-    return asset;
-}))
-.then(() => {
-    console.log("All assets loaded, starting game loop");
-    gameMusic.play().catch(e => console.error("Error playing game music:", e));
-    gameLoop();
-})
-.catch(error => {
-    console.error("Error loading assets:", error);
-});
-
-console.log("Game script finished loading");
+    ctx.drawImage(bonus
 
 // // Debugging: Log when the script starts
 // console.log("Game script started");
@@ -481,8 +451,20 @@ console.log("Game script finished loading");
 // ];
 // let currentMickeyNoiseIndex = 0;
 
+// // New audio elements
+// const gameMusic = new Audio('assets/GameMusic.mp3');
+// gameMusic.loop = true;
+// const deathSound = new Audio('assets/deathSound.mp3');
+// const bonusSound = new Audio('assets/bonusSound.mp3');
+
+// // Bonus image
+// const bonusImage = new Image();
+// bonusImage.src = 'assets/Bonus.png';
+// let showBonus = false;
+// let bonusTimer = 0;
+
 // // Error handling for audio loading
-// [punchSound, ...mickeyNoises].forEach(audio => {
+// [punchSound, ...mickeyNoises, gameMusic, deathSound, bonusSound].forEach(audio => {
 //     audio.onerror = function() {
 //         console.error(`Failed to load audio: ${audio.src}`);
 //     };
@@ -501,6 +483,10 @@ console.log("Game script finished loading");
 //     drawMickey();
 //     drawScore();
 //     drawInstructions();
+    
+//     if (showBonus) {
+//         drawBonus();
+//     }
 
 //     gameSpeed += 0.0001;
 
@@ -590,6 +576,13 @@ console.log("Game script finished loading");
 //         mickey.state = 'dying';
 //         mickey.deathFrame = 0;
 //         mickey.deathAnimationDuration = 0;
+//         deathSound.play().catch(e => console.error("Error playing death sound:", e));
+//         setTimeout(() => {
+//             bonusSound.play().catch(e => console.error("Error playing bonus sound:", e));
+//             score += 10;  // Add 10 bonus points
+//             showBonus = true;
+//             bonusTimer = 60;  // Show bonus image for 60 frames (about 1 second)
+//         }, 1000);  // Wait for 1 second after death sound
 //     } else {
 //         mickey.state = 'hit';
 //         mickey.hitDuration = 0;
@@ -607,6 +600,7 @@ console.log("Game script finished loading");
 //     mickey.state = 'walking';
 //     mickey.speed += 0.1;
 //     mickeyHitCount = 0;
+//     mickey.frameX = 0;  // Reset the walk animation frame
 // }
 
 // // Draw functions
@@ -662,6 +656,14 @@ console.log("Game script finished loading");
 //     }
 // }
 
+// function drawBonus() {
+//     ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
+//     bonusTimer--;
+//     if (bonusTimer <= 0) {
+//         showBonus = false;
+//     }
+// }
+
 // // Event listeners
 // document.addEventListener('keydown', (event) => {
 //     if (event.code === 'Space' && !eric.punching) {
@@ -681,18 +683,29 @@ console.log("Game script finished loading");
 //     mickeyHitImage,
 //     ...mickeyDieImages,
 //     ...punchEffects,
-//     backgroundImage
-// ].map(img => new Promise(resolve => {
-//     if (img.complete) resolve();
-//     else img.onload = resolve;
-// })))
+//     backgroundImage,
+//     bonusImage,
+//     new Promise(resolve => {
+//         gameMusic.oncanplaythrough = resolve;
+//         deathSound.oncanplaythrough = resolve;
+//         bonusSound.oncanplaythrough = resolve;
+//     })
+// ].map(asset => {
+//     if (asset instanceof HTMLImageElement) {
+//         return new Promise(resolve => {
+//             if (asset.complete) resolve();
+//             else asset.onload = resolve;
+//         });
+//     }
+//     return asset;
+// }))
 // .then(() => {
-//     console.log("All images loaded, starting game loop");
+//     console.log("All assets loaded, starting game loop");
+//     gameMusic.play().catch(e => console.error("Error playing game music:", e));
 //     gameLoop();
 // })
 // .catch(error => {
-//     console.error("Error loading images:", error);
+//     console.error("Error loading assets:", error);
 // });
 
 // console.log("Game script finished loading");
-
