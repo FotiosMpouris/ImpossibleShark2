@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             drawBonus();
         }
 
-        gameSpeed += 0.0001;
+        gameSpeed += 0.0003;
         frameCount++;
 
         requestAnimationFrame(gameLoop);
