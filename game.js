@@ -283,33 +283,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
+            
             if (eric.punching && 
                 eric.punchDuration >= 5 && eric.punchDuration <= 20 && 
-                mickey.state === 'walking') {
-    
-                // Calculate the front edge of Eric's punch
-                let ericPunchFront = eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth;
-    
-                // Calculate the front edge of Mickey
-                let mickeyFront = mickey.x + mickey.hitboxOffset;
-    
-                // Check if Mickey is within a smaller range of Eric's punch
-            if (mickeyFront < ericPunchFront && 
-                mickeyFront > ericPunchFront - 100) { // Adjust this value to change the trigger area
-        
-                // Move Mickey to the punch point
-                mickey.x = ericPunchFront - mickey.hitboxOffset - 50; // Adjust this value for desired positioning
+                mickey.state === 'walking' &&
+                mickey.x + mickey.hitboxOffset < eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth &&
+                mickey.x + mickey.hitboxOffset + mickey.hitboxWidth > eric.x + eric.punchHitboxOffset) {
+                mickey.x = eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth - mickey.hitboxOffset - mickey.hitboxWidth + 50;
                 hitMickey();
             }
-        }
-            // if (eric.punching && 
-            //     eric.punchDuration >= 5 && eric.punchDuration <= 20 && 
-            //     mickey.state === 'walking' &&
-            //     mickey.x + mickey.hitboxOffset < eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth &&
-            //     mickey.x + mickey.hitboxOffset + mickey.hitboxWidth > eric.x + eric.punchHitboxOffset) {
-            //     mickey.x = eric.x + eric.punchHitboxOffset + eric.punchHitboxWidth - mickey.hitboxOffset - mickey.hitboxWidth + 50;
-            //     hitMickey();
-            // }
         }
     }
 
