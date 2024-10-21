@@ -48,7 +48,7 @@ for (let i = 1; i <= 8; i++) {
 const ericPunchImage1 = new Image();
 ericPunchImage1.src = 'assets/ericPunch.png';
 const ericPunchImage2 = new Image();
-ericPunchImage2.src = 'assets/EricPunch2.png';
+ericPunchImage2.src = 'assets/ericPunch2.png';
 let currentPunchImage = ericPunchImage1;
 
 // Punch effect animations
