@@ -336,18 +336,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawInstructions() {
-        const currentTime = Date.now();
-        if (currentTime - gameStartTime < 10000) {
-            if (showInstructions) {
-                ctx.fillStyle = 'red';
-                ctx.font = '24px Arial';
-                ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
-            }
-            if (Math.floor((currentTime - gameStartTime) / 500) % 2 === 0) {
-                showInstructions = !showInstructions;
-            }
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - gameStartTime;
+    
+    if (elapsedTime < 10000) { // Show for 10 seconds
+        // Change state every 1 second (1000 milliseconds)
+        showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+        
+        if (showInstructions) {
+            ctx.fillStyle = 'red';
+            ctx.font = '24px Arial';
+            ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
         }
     }
+}
 
     function drawBonus() {
         ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
