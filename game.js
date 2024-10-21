@@ -295,10 +295,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
                 // Check if Mickey is within a smaller range of Eric's punch
             if (mickeyFront < ericPunchFront && 
-                mickeyFront > ericPunchFront - 100) { // Adjust this value to change the trigger area
+                mickeyFront > ericPunchFront - 50) { // Adjust this value to change the trigger area
         
                 // Move Mickey to the punch point
-                mickey.x = ericPunchFront - mickey.hitboxOffset - 50; // Adjust this value for desired positioning
+                mickey.x = ericPunchFront - mickey.hitboxOffset - 20; // Adjust this value for desired positioning
                 hitMickey();
             }
         }
