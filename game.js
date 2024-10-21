@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 500,
     frameX: 0,
     baseSpeed: 2, // Add this line
-    speed: 2,
+    speed: 3,
     visible: false
 };
     // Crab walking animation
