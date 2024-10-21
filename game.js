@@ -337,7 +337,72 @@ function drawInstructions() {
 }
 
 function drawBonus() {
-    ctx.drawImage(bonus
+    ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
+    bonusTimer--;
+    if (bonusTimer <= 0) {
+        showBonus = false;
+    }
+}
+
+// Event listeners
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'Space' && !eric.punching) {
+        eric.punching = true;
+        eric.punchDuration = 0;
+        currentPunchImage = Math.random() < 0.5 ? ericPunchImage1 : ericPunchImage2;
+        punchSound.play().catch(e => console.error("Error playing punch sound:", e));
+    }
+});
+
+document.addEventListener('keydown', () => {
+    if (gameMusic.paused) {
+        startGameMusic(); // Try to start music on any key press
+    }
+});
+
+// Debugging: Log when all assets are loaded
+Promise.all([
+    ...ericImages, 
+    ericPunchImage1,
+    ericPunchImage2,
+    ...mickeyImages, 
+    mickeyHitImage,
+    ...mickeyDieImages,
+    ...punchEffects,
+    backgroundImage,
+    bonusImage,
+    new Promise(resolve => {
+        gameMusic.addEventListener('canplaythrough', resolve, { once: true });
+        gameMusic.addEventListener('error', (e) => {
+            console.error("Error loading game music:", e);
+            resolve(); // Resolve anyway to not block the game from starting
+        });
+    }),
+    new Promise(resolve => {
+        deathSound.addEventListener('canplaythrough', resolve, { once: true });
+    }),
+    new Promise(resolve => {
+        bonusSound.addEventListener('canplaythrough', resolve, { once: true });
+    })
+].map(asset => {
+    if (asset instanceof HTMLImageElement) {
+        return new Promise(resolve => {
+            if (asset.complete) resolve();
+            else asset.onload = resolve;
+        });
+    }
+    return asset;
+}))
+.then(() => {
+    console.log("All assets loaded, starting game loop");
+    startGameMusic(); // Try to start music here
+    gameLoop();
+})
+.catch(error => {
+    console.error("Error loading assets:", error);
+});
+
+console.log("Game script finished loading");
 
 // // Debugging: Log when the script starts
 // console.log("Game script started");
