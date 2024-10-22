@@ -26,10 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cloudBackground.src = 'assets/ImpossibleClouds01.png';
     let cloudBackgroundX = 0;
 
-    // Add this with your other image declarations
-    const sharkScoreImage = new Image();
-    sharkScoreImage.src = 'assets/sharkScore.png';
-
     // Eric character
     const eric = {
         x: -300,
@@ -505,19 +501,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function drawScore() {
     // Calculate position based on canvas width
-    const rightPadding = 80;
-    const imageWidth = 200;  // Adjust based on your PNG size
-    const imageHeight = 75;  // Adjust based on your PNG size
+    const rightPadding = 80; // Distance from right edge
     
-    // Draw the shark score background image
-    ctx.drawImage(sharkScoreImage, 
-        canvas.width - rightPadding - imageWidth/2,  // x position
-        10,                                          // y position
-        imageWidth,                                  // width
-        imageHeight);                                // height
+    // Draw white background box
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(canvas.width - 160, 10, 120, 30); // x, y, width, height
     
     // Draw score text in red
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = 'white';
     ctx.font = '20px Arial';
     ctx.fillText(`Score: ${score}`, canvas.width - 140, 30);
 }
@@ -613,14 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }),
         new Promise(resolve => {
             ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
-        }),            
-        new Promise(resolve => {
-            sharkScoreImage.onload = resolve;
-            sharkScoreImage.onerror = () => {
-                console.error("Failed to load shark score background");
-                resolve(); // Resolve anyway to not block the game
-            };
-        }), // Added closing parenthesis here
+        }),
         new Promise(resolve => {
             fuckCrabSound.addEventListener('canplaythrough', resolve, { once: true });
         })
