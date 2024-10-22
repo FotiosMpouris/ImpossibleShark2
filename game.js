@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Eric character
     const eric = {
-        x: -300, // Original position near the left side
+        x: -300,
         y: canvas.height - GROUND_HEIGHT - 400,
         width: 900,
         height: 500,
@@ -63,24 +63,13 @@ document.addEventListener('DOMContentLoaded', function() {
     ericPunchImage2.src = 'assets/ericPunch2.png';
     let currentPunchImage = ericPunchImage1;
 
-    // Eric pinched image
-    const ericPinchedImage = new Image();
-    ericPinchedImage.src = 'assets/ericPinched.png';
-
-    // Eric crunch image
+    // Eric's crunch image
     const ericCrunchImage = new Image();
     ericCrunchImage.src = 'assets/ericCrunch.png';
 
-    const crabCrunchImage = new Image();
-    crabCrunchImage.src = 'assets/crabCrunch.png';
-
-    // Crab death animation
-    const crabDieImages = [];
-    for (let i = 1; i <= 3; i++) {
-        const img = new Image();
-        img.src = `assets/crabDead${i}.png`;
-        crabDieImages.push(img);
-    }
+    // Eric pinched image
+    const ericPinchedImage = new Image();
+    ericPinchedImage.src = 'assets/ericPinched.png';
 
     // Punch effect animations
     const punchEffects = [];
@@ -131,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Crab character
-    // Crab character
     const crab = {
         x: canvas.width,
         y: canvas.height - GROUND_HEIGHT - 300,
@@ -147,6 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
         deathAnimationDuration: 0,
         crunchDuration: 0
     };
+
     // Crab walking animation
     const crabImages = [];
     for (let i = 1; i <= 5; i++) {
@@ -155,8 +144,20 @@ document.addEventListener('DOMContentLoaded', function() {
         crabImages.push(img);
     }
 
+    // Crab death and crunch images
+    const crabCrunchImage = new Image();
+    crabCrunchImage.src = 'assets/crabCrunch.png';
+
+    const crabDieImages = [];
+    for (let i = 1; i <= 3; i++) {
+        const img = new Image();
+        img.src = `assets/crabDead${i}.png`;
+        crabDieImages.push(img);
+    }
+
     // Sounds
     const punchSound = new Audio('assets/PunchSound.mp3');
+    const fuckCrabSound = new Audio('assets/fuckCrab.mp3');
     const mickeyNoises = [
         new Audio('assets/MickeyNoise1.mp3'),
         new Audio('assets/MickeyNoise2.mp3'),
@@ -170,9 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Eric ouch sound
     const ericOuchSound = new Audio('assets/ericOuch.mp3');
-
-    // Crab death sound
-    const fuckCrabSound = new Audio('assets/fuckCrab.mp3');
 
     // Game music setup
     const gameMusic = new Audio('assets/GameMusic.mp3');
@@ -191,12 +189,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error(`Failed to load ${name}: ${asset.src || asset.currentSrc}`);
     }
 
-    [oceanBackground, cloudBackground, ...ericImages, ericPunchImage1, ericPunchImage2, ...punchEffects, 
-     ...mickeyImages, mickeyHitImage, ...mickeyDieImages, bonusImage, ericPinchedImage, ...crabImages].forEach(img => {
+    [oceanBackground, cloudBackground, ...ericImages, ericPunchImage1, ericPunchImage2, 
+     ...punchEffects, ...mickeyImages, mickeyHitImage, ...mickeyDieImages, bonusImage, 
+     ericPinchedImage, ...crabImages, ericCrunchImage, crabCrunchImage, ...crabDieImages].forEach(img => {
         img.onerror = () => handleAssetError(img, 'image');
     });
 
-    [punchSound, ...mickeyNoises, gameMusic, deathSound, bonusSound, ericOuchSound].forEach(audio => {
+    [punchSound, ...mickeyNoises, gameMusic, deathSound, bonusSound, ericOuchSound, fuckCrabSound].forEach(audio => {
         audio.onerror = () => handleAssetError(audio, 'audio');
     });
 
@@ -250,33 +249,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateEric() {
-    if (eric.walking && !eric.punching && !eric.pinched && !eric.crunching) {
-        if (frameCount % 15 === 0) {
-            eric.frameX = (eric.frameX + 1) % 8;
+        if (eric.walking && !eric.punching && !eric.pinched && !eric.crunching) {
+            if (frameCount % 15 === 0) {
+                eric.frameX = (eric.frameX + 1) % 8;
+            }
+        }
+        if (eric.punching) {
+            eric.punchDuration++;
+            if (eric.punchDuration > 30) {
+                eric.punching = false;
+                eric.punchDuration = 0;
+            }
+        }
+        if (eric.crunching) {
+            eric.crunchDuration++;
+            if (eric.crunchDuration > 30) {
+                eric.crunching = false;
+                eric.crunchDuration = 0;
+            }
+        }
+        if (eric.pinched) {
+            eric.pinchedDuration++;
+            if (eric.pinchedDuration > 30) {
+                eric.pinched = false;
+                eric.pinchedDuration = 0;
+            }
         }
     }
-    if (eric.punching) {
-        eric.punchDuration++;
-        if (eric.punchDuration > 30) {
-            eric.punching = false;
-            eric.punchDuration = 0;
-        }
-    }
-    if (eric.crunching) {
-        eric.crunchDuration++;
-        if (eric.crunchDuration > 30) {
-            eric.crunching = false;
-            eric.crunchDuration = 0;
-        }
-    }
-    if (eric.pinched) {
-        eric.pinchedDuration++;
-        if (eric.pinchedDuration > 30) {
-            eric.pinched = false;
-            eric.pinchedDuration = 0;
-        }
-    }
-}
 
     function updateMickey() {
         if (mickey.visible) {
@@ -318,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            
             if (eric.punching && 
                 eric.punchDuration >= 5 && eric.punchDuration <= 20 && 
                 mickey.state === 'walking' &&
@@ -330,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-        function updateCrab() {
+    function updateCrab() {
         if (crab.visible) {
             switch(crab.state) {
                 case 'walking':
@@ -366,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
 
-        // Check for crunch collision
+            // Check for crunch collision
             if (eric.crunching && 
                 eric.crunchDuration >= 5 && eric.crunchDuration <= 20 && 
                 crab.state === 'walking' &&
@@ -382,10 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-        function hitCrab() {
+    function hitCrab() {
         crab.hitCount++;
         fuckCrabSound.play().catch(e => console.error("Error playing crab sound:", e));
-    
+        
         if (crab.hitCount >= 2) {
             crab.state = 'dying';
             crab.deathFrame = 0;
@@ -406,8 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
         crab.frameX = 0;
         crabTimer = 0;
     }
-    
-    
+
     function hitMickey() {
         mickeyHitCount++;
         if (mickeyHitCount >= MICKEY_MAX_HITS) {
@@ -452,16 +449,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawEric() {
-    if (eric.pinched) {
-        ctx.drawImage(ericPinchedImage, eric.x, eric.y, eric.width, eric.height);
-    } else if (eric.punching) {
-        ctx.drawImage(currentPunchImage, eric.x, eric.y, eric.width, eric.height);
-    } else if (eric.crunching) {
-        ctx.drawImage(ericCrunchImage, eric.x, eric.y, eric.width, eric.height);
-    } else {
-        ctx.drawImage(ericImages[eric.frameX], eric.x, eric.y, eric.width, eric.height);
+        if (eric.pinched) {
+            ctx.drawImage(ericPinchedImage, eric.x, eric.y, eric.width, eric.height);
+        } else if (eric.punching) {
+            ctx.drawImage(currentPunchImage, eric.x, eric.y, eric.width, eric.height);
+        } else if (eric.crunching) {
+            ctx.drawImage(ericCrunchImage, eric.x, eric.y, eric.width, eric.height);
+        } else {
+            ctx.drawImage(ericImages[eric.frameX], eric.x, eric.y, eric.width, eric.height);
+        }
     }
-}
 
     function drawMickey() {
         if (mickey.visible) {
@@ -487,20 +484,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawCrab() {
-    if (crab.visible) {
-        switch(crab.state) {
-            case 'walking':
-                ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
-                break;
-            case 'crunched':
-                ctx.drawImage(crabCrunchImage, crab.x, crab.y, crab.width, crab.height);
-                break;
-            case 'dying':
-                ctx.drawImage(crabDieImages[crab.deathFrame], crab.x, crab.y, crab.width, crab.height);
-                break;
+        if (crab.visible) {
+            switch(crab.state) {
+                case 'walking':
+                    ctx.drawImage(crabImages[crab.frameX], crab.x, crab.y, crab.width, crab.height);
+                    break;
+                case 'crunched':
+                    ctx.drawImage(crabCrunchImage, crab.x, crab.y, crab.width, crab.height);
+                    break;
+                case 'dying':
+                    ctx.drawImage(crabDieImages[crab.deathFrame], crab.x, crab.y, crab.width, crab.height);
+                    break;
+            }
         }
     }
-}
 
     function drawScore() {
         ctx.fillStyle = scoreColor;
@@ -520,6 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ctx.fillStyle = 'red';
                 ctx.font = '24px Arial';
                 ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+                ctx.fillText('Crunch crabs with down arrow', canvas.width / 2 - 130, 80);
             }
         }
     }
@@ -556,72 +554,74 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Asset loading and game initialization
-   Promise.all([
-    ...ericImages, 
-    ericPunchImage1,
-    ericPunchImage2,
-    ...mickeyImages, 
-    mickeyHitImage,
-    ...mickeyDieImages,
-    ...punchEffects,
-    ...crabImages,
-    ericPinchedImage,
-    ericCrunchImage,
-    crabCrunchImage,
-    ...crabDieImages,
-    new Promise(resolve => {
-        cloudBackground.onload = resolve;
-        cloudBackground.onerror = () => {
-            console.error("Failed to load cloud background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    new Promise(resolve => {
-        oceanBackground.onload = resolve;
-        oceanBackground.onerror = () => {
-            console.error("Failed to load ocean background");
-            resolve(); // Resolve anyway to not block the game
-        };
-    }),
-    bonusImage,
-    new Promise(resolve => {
-        gameMusic.addEventListener('canplaythrough', resolve, { once: true });
-        gameMusic.addEventListener('error', (e) => {
-            console.error("Error loading game music:", e);
-            resolve();
-        });
-    }),
-    new Promise(resolve => {
-        deathSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        bonusSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
-    }),
-    new Promise(resolve => {
-        fuckCrabSound.addEventListener('canplaythrough', resolve, { once: true });
-    })  // This was nested incorrectly before
-].map(asset => {
-    if (asset instanceof HTMLImageElement) {
-        return new Promise(resolve => {
-            if (asset.complete) resolve();
-            else asset.onload = resolve;
-        });
-    }
-    return asset;
-}))
-.then(() => {
-    console.log("All assets loaded, starting game loop");
-    startGameMusic();
-    gameLoop();
-})
-.catch(error => {
-    console.error("Error during game initialization:", error);
-    // You might want to display an error message to the user here
-});
+    Promise.all([
+        ...ericImages, 
+        ericPunchImage1,
+        ericPunchImage2,
+        ...mickeyImages, 
+        mickeyHitImage,
+        ...mickeyDieImages,
+        ...punchEffects,
+        ...crabImages,
+        ericPinchedImage,
+        ericCrunchImage,
+        crabCrunchImage,
+        ...crabDieImages,
+        new Promise(resolve => {
+            cloudBackground.onload = resolve;
+            cloudBackground.onerror = () => {
+                console.error("Failed to load cloud background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        new Promise(resolve => {
+            oceanBackground.onload = resolve;
+            oceanBackground.onerror = () => {
+                console.error("Failed to load ocean background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }),
+        bonusImage,
+        new Promise(resolve => {
+            gameMusic.addEventListener('canplaythrough', resolve, { once: true });
+            gameMusic.addEventListener('error', (e) => {
+                console.error("Error loading game music:", e);
+                resolve();
+            });
+        }),
+        new Promise(resolve => {
+            deathSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            bonusSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+            fuckCrabSound.addEventListener('canplaythrough', resolve, { once: true });
+        })
+    ].map(asset => {
+        if (asset instanceof HTMLImageElement) {
+            return new Promise(resolve => {
+                if (asset.complete) resolve();
+                else asset.onload = resolve;
+            });
+        }
+        return asset;
+    }))
+    .then(() => {
+        console.log("All assets loaded, starting game loop");
+        startGameMusic();
+        gameLoop();
+    })
+    .catch(error => {
+        console.error("Error during game initialization:", error);
+        // You might want to display an error message to the user here
+    });
 
+    console.log("Game script finished loading");
+});
 
 // console.log("Game script started");
 
