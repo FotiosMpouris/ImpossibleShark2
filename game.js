@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rightPadding = 80; // Distance from right edge
     
     // Draw white background box
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = 'lightblue';
     ctx.fillRect(canvas.width - 160, 10, 120, 30); // x, y, width, height
     
     // Draw score text in red
