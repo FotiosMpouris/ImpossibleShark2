@@ -501,11 +501,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function drawScore() {
     // Draw white background box
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'red';
     ctx.fillRect(5, 10, 120, 30); // x, y, width, height
     
     // Draw score text in red
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = 'white';
     ctx.font = '20px Arial';
     ctx.fillText(`Score: ${score}`, 10, 30);
 }
@@ -518,8 +518,8 @@ document.addEventListener('DOMContentLoaded', function() {
         showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
         
         if (showInstructions) {
-            ctx.fillStyle = 'yellow';  // Changed from 'red' to 'black'
-            ctx.font = '30px Arial';
+            ctx.fillStyle = 'black';  // Changed from 'red' to 'black'
+            ctx.font = '35px Arial';
             ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
             ctx.fillText('Kill crabs with down arrow', canvas.width / 2 - 130, 80);
         }
