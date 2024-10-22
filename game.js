@@ -500,9 +500,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawScore() {
-    // Draw white background box
+    // Draw white oval background
+    ctx.beginPath();
     ctx.fillStyle = 'red';
-    ctx.fillRect(5, 10, 120, 30); // x, y, width, height
+    // Parameters: centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle
+    ctx.ellipse(65, 25, 60, 15, 0, 0, 2 * Math.PI);
+    ctx.fill();
     
     // Draw score text in red
     ctx.fillStyle = 'white';
