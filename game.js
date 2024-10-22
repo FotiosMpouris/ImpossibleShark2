@@ -381,20 +381,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function hitCrab() {
-        crab.hitCount++;
-        fuckCrabSound.play().catch(e => console.error("Error playing crab sound:", e));
-        
-        if (crab.hitCount >= 2) {
-            crab.state = 'dying';
-            crab.deathFrame = 0;
-            crab.deathAnimationDuration = 0;
-            score += 3; // Bonus points for killing crab
-        } else {
-            crab.state = 'crunched';
-            crab.crunchDuration = 0;
-            score += 1; // Points for hitting crab
-        }
+    crab.hitCount++;
+    fuckCrabSound.play().catch(e => console.error("Error playing crab sound:", e));
+    
+    if (crab.hitCount >= 2) {
+        crab.state = 'dying';
+        crab.deathFrame = 0;
+        crab.deathAnimationDuration = 0;
+        score += 3; // Only add points when the crab dies
+    } else {
+        crab.state = 'crunched';
+        crab.crunchDuration = 0;
+        // Removed the score += 1 from here
     }
+}
 
     function respawnCrab() {
         crab.x = canvas.width;
@@ -518,10 +518,10 @@ document.addEventListener('DOMContentLoaded', function() {
         showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
         
         if (showInstructions) {
-            ctx.fillStyle = 'black';  // Changed from 'red' to 'black'
-            ctx.font = '24px Arial';
+            ctx.fillStyle = 'yellow';  // Changed from 'red' to 'black'
+            ctx.font = '30px Arial';
             ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
-            ctx.fillText('Crunch crabs with down arrow', canvas.width / 2 - 130, 80);
+            ctx.fillText('Kill crabs with down arrow', canvas.width / 2 - 130, 80);
         }
     }
 }
