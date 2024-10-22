@@ -506,8 +506,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function drawScore() {
     // Calculate position based on canvas width
     const rightPadding = 80;
-    const imageWidth = 120;  // Adjust based on your PNG size
-    const imageHeight = 40;  // Adjust based on your PNG size
+    const imageWidth = 200;  // Adjust based on your PNG size
+    const imageHeight = 75;  // Adjust based on your PNG size
     
     // Draw the shark score background image
     ctx.drawImage(sharkScoreImage, 
