@@ -514,17 +514,17 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
     function drawInstructions() {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - gameStartTime;
+    // const currentTime = Date.now();
+    // const elapsedTime = currentTime - gameStartTime;
     
-    if (elapsedTime < 10000) {
-        showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
+    // if (elapsedTime < 10000) {
+    //     showInstructions = Math.floor(elapsedTime / 1000) % 2 === 0;
         
-        if (showInstructions) {
-            ctx.fillStyle = 'black';  // Changed from 'red' to 'black'
-            ctx.font = '35px Arial';
-            ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
-            ctx.fillText('Kill crabs with down arrow', canvas.width / 2 - 130, 80);
+    //     if (showInstructions) {
+    //         ctx.fillStyle = 'black';  // Changed from 'red' to 'black'
+    //         ctx.font = '35px Arial';
+    //         ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
+    //         ctx.fillText('Kill crabs with down arrow', canvas.width / 2 - 130, 80);
         }
     }
 }
