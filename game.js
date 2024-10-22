@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
     cloudBackground.src = 'assets/ImpossibleClouds01.png';
     let cloudBackgroundX = 0;
 
+    // Add this with your other image declarations
+    const sharkScoreImage = new Image();
+    sharkScoreImage.src = 'assets/sharkScore.png';
+
     // Eric character
     const eric = {
         x: -300,
@@ -500,17 +504,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function drawScore() {
-    // Draw white oval background
-    ctx.beginPath();
-    ctx.fillStyle = 'red';
-    // Parameters: centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle
-    ctx.ellipse(65, 25, 60, 15, 0, 0, 2 * Math.PI);
-    ctx.fill();
+    // Calculate position based on canvas width
+    const rightPadding = 80;
+    const imageWidth = 120;  // Adjust based on your PNG size
+    const imageHeight = 40;  // Adjust based on your PNG size
+    
+    // Draw the shark score background image
+    ctx.drawImage(sharkScoreImage, 
+        canvas.width - rightPadding - imageWidth/2,  // x position
+        10,                                          // y position
+        imageWidth,                                  // width
+        imageHeight);                                // height
     
     // Draw score text in red
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'red';
     ctx.font = '20px Arial';
-    ctx.fillText(`Score: ${score}`, 10, 30);
+    ctx.fillText(`Score: ${score}`, canvas.width - 140, 30);
 }
 
     function drawInstructions() {
@@ -604,7 +613,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }),
         new Promise(resolve => {
             ericOuchSound.addEventListener('canplaythrough', resolve, { once: true });
-        }),
+        }),            
+        new Promise(resolve => {
+            sharkScoreImage.onload = resolve;
+            sharkScoreImage.onerror = () => {
+                console.error("Failed to load shark score background");
+                resolve(); // Resolve anyway to not block the game
+            };
+        }), // Added closing parenthesis here
         new Promise(resolve => {
             fuckCrabSound.addEventListener('canplaythrough', resolve, { once: true });
         })
@@ -626,10 +642,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Error during game initialization:", error);
         // You might want to display an error message to the user here
     });
-
     console.log("Game script finished loading");
 });
-
 
 // console.log("Game script started");
 
