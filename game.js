@@ -526,8 +526,8 @@ document.addEventListener('DOMContentLoaded', function() {
     //         ctx.fillText('Punch with space bar', canvas.width / 2 - 100, 50);
     //         ctx.fillText('Kill crabs with down arrow', canvas.width / 2 - 130, 80);
         }
-    }
-}
+    
+
 
     function drawBonus() {
         ctx.drawImage(bonusImage, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
