@@ -6,7 +6,7 @@
     <title>Impossible Shark</title>
     <style>
         body {
-            background-color: #87CEEB;
+            background-color: #87CEEB; /* Sky blue */
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
@@ -14,96 +14,136 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow: hidden; /* Prevent scrollbars */
+            position: relative; /* Needed for absolute positioning of profiles */
         }
         .game-container {
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent white */
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
             padding: 20px;
             text-align: center;
-            max-width: 95vw;
-            max-height: 95vh;
+            max-width: 95vw; /* Use viewport width */
+            max-height: 95vh; /* Use viewport height */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            position: relative;
-            z-index: 1;
+            align-items: center; /* Center canvas horizontally */
+            position: relative; /* Keep container content flow */
+            z-index: 1; /* Ensure game container is above profiles visually if needed */
         }
         canvas {
-            border: 3px solid #1E90FF;
+            border: 3px solid #1E90FF; /* Dodger blue */
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+            /* Let the container handle max-width/height */
             max-width: 100%;
-            height: auto;
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Prevents extra space below canvas */
         }
         h1 {
             color: #1E90FF;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            margin-bottom: 50px;
+            /* Responsive font size using clamp */
+            font-size: clamp(2rem, 5vw, 3rem); /* min, preferred, max */
+            margin-top: 0; /* Adjust spacing */
+            margin-bottom: 15px; /* Space below title */
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .instructions {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 2px solid #1E90FF;
+        /* Instructions Styling - kept static below canvas */
+        .instructions-footer {
+            background-color: rgba(30, 144, 255, 0.7); /* Use theme color */
             border-radius: 10px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: clamp(0.8rem, 2vw, 1.1rem);
-        }
-        .instructions p {
-            color: black;
-            font-size: 1.5rem;
+            padding: 8px 15px;
+            margin-top: 15px; /* Space above instructions */
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem); /* Responsive text */
+            color: white; /* White text on blue background */
             font-weight: bold;
-            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
+        .instructions-footer p {
+             margin: 0; /* Remove default paragraph margin */
+             line-height: 1.4; /* Adjust line spacing if needed */
+        }
+
+        /* Character Profiles - Positioned outside the main container */
         .character-profile {
-            position: fixed;
+            position: fixed; /* Fixed position relative to viewport */
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 0;
+            z-index: 0; /* Behind game container */
+             /* Prevent interaction with profiles */
+            pointer-events: none;
+             /* Add subtle animation */
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
         }
+        /* Hover effect (optional) */
+        /* .character-profile:hover {
+             opacity: 1;
+        } */
+
         .character-profile img {
-            width: 600px;
+             /* Adjust size as needed */
+            width: clamp(100px, 20vw, 250px); /* Responsive width */
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+             /* Add filter for effect */
+            filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.4));
         }
         .character-profile .name {
             color: white;
-            font-size: 2rem;
+            font-size: clamp(1rem, 3vw, 1.8rem);
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
+
+        /* Positioning specific profiles */
         #eric-profile {
-            left: -55px;
+            left: 1vw; /* Position from left edge */
             top: 50%;
             transform: translateY(-50%);
         }
         #mickey-profile {
-            right: -35px;
+            right: 1vw; /* Position from right edge */
             top: 30%;
             transform: translateY(-50%);
         }
         #crab-profile {
-            right: -35px;
-            bottom: 10%;
+            right: 1vw; /* Position from right edge */
+            bottom: 5%; /* Position from bottom */
         }
-        @media (max-height: 600px) {
-            .game-container {
-                padding: 10px;
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+             /* Hide profiles on smaller screens to avoid clutter */
+            .character-profile {
+                 /* display: none; */
+                 /* OR make them smaller/transparent */
+                 opacity: 0.4;
+                 width: clamp(50px, 15vw, 100px);
             }
-            h1 {
-                margin-bottom: 5px;
-            }
-            .instructions {
-                margin-top: 5px;
-                padding: 5px;
-            }
+             #eric-profile { left: 0.5vw; }
+             #mickey-profile { right: 0.5vw; top: 20%;}
+             #crab-profile { right: 0.5vw; bottom: 2%;}
+
+            h1 { font-size: clamp(1.5rem, 6vw, 2rem); margin-bottom: 10px;}
+            .game-container { padding: 10px; }
+            .instructions-footer { margin-top: 10px; padding: 5px 10px; }
         }
+         @media (max-height: 500px) {
+             /* Adjust layout for short screens */
+             h1 { margin-bottom: 5px; }
+             .game-container { padding: 5px; }
+             .instructions-footer { margin-top: 5px; }
+             /* Optionally hide profiles on very short screens */
+              /* .character-profile { display: none; } */
+         }
+
     </style>
 </head>
 <body>
+    <!-- Character Profiles -->
     <div class="character-profile" id="eric-profile">
         <img src="assets/ericProfile.png" alt="Eric">
         <span class="name">Eric</span>
@@ -116,214 +156,20 @@
         <img src="assets/crabProfile.png" alt="Crab">
         <span class="name">Fuckin' Crab</span>
     </div>
+
+    <!-- Game Area -->
     <div class="game-container">
         <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas" width="900" height="500"></canvas>
-        <div class="instructions">
-            <p>Use the spacebar to punch shark and down arrow to kill crab!</p>
+        <canvas id="gameCanvas" width="900" height="500">
+            Your browser does not support the HTML5 canvas tag.
+        </canvas>
+        <!-- Static Instructions Footer -->
+        <div class="instructions-footer">
+            <p>Use [SPACE] to punch Shark | Use [DOWN ARROW] to kill Crab!</p>
         </div>
     </div>
+
+    <!-- Game Script -->
     <script src="game.js"></script>
 </body>
 </html>
-
-
-<!-- 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impossible Shark</title>
-    <style>
-        body {
-            background-color: #87CEEB;
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        .game-container {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            text-align: center;
-            max-width: 95vw;
-            max-height: 95vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        canvas {
-            border: 3px solid #1E90FF;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
-            max-width: 100%;
-            height: auto;
-        }
-        h1 {
-            color: #1E90FF;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .instructions {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 2px solid #1E90FF;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: clamp(0.8rem, 2vw, 1.1rem);
-            color: #333;
-        }
-        .ocean-waves {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: url('assets/ocean-waves1.png') repeat-x;
-            background-size: auto 100%;
-            animation: wave 10s linear infinite;
-            z-index: -1;
-        }
-        @keyframes wave {
-            0% { background-position: 0 0; }
-            100% { background-position: 1000px 0; }
-        }
-
-        @media (max-height: 600px) {
-            .game-container {
-                padding: 10px;
-            }
-            h1 {
-                margin-bottom: 5px;
-            }
-            .instructions {
-                margin-top: 5px;
-                padding: 5px;
-            }
-            .ocean-waves {
-                height: 50px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="ocean-waves"></div>
-    <div class="game-container">
-        <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas" width="900" height="500"></canvas>
-        <div class="instructions">
-            <p>Use the spacebar to punch and survive as long as you can!</p>
-        </div>
-    </div>
-    <script src="game.js"></script>
-</body>
-</html>
- -->
-
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impossible Shark</title>
-    <style>
-        body {
-            background-color: #87CEEB; /* Sky blue background */
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        .game-container {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            text-align: center;
-        }
-        canvas {
-            border: 3px solid #1E90FF; /* Dodger blue border */
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
-        }
-        h1 {
-            color: #1E90FF;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .instructions {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 2px solid #1E90FF;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #333;
-        }
-        .ocean-waves {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: url('assets/ocean-waves1.png') repeat-x;
-            animation: wave 10s linear infinite;
-            z-index: -1;
-        }
-        @keyframes wave {
-            0% { background-position: 0 0; }
-            100% { background-position: 1000px 0; }
-        }
-    </style>
-</head>
-<body>
-    <div class="ocean-waves"></div>
-    <div class="game-container">
-        <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas" width="900" height="500"></canvas>
-        <div class="instructions">
-            <p>Use the spacebar to punch and survive as long as you can!</p>
-        </div>
-    </div>
-    <script src="game.js"></script>
-</body>
-</html> -->
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impossible Shark</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas" width="900" height="500"></canvas>
-    <script src="game.js"></script>
-</body>
-</html>
- -->
