@@ -3,173 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impossible Shark - Overhaul</title>
+    <title>Cosmic Collector</title>
     <style>
         body {
-            background-color: #87CEEB; /* Sky blue */
-            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #000010; /* Dark blue/black space background */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
             overflow: hidden; /* Prevent scrollbars */
-            position: relative; /* Needed for absolute positioning of profiles */
         }
-        .game-container {
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent white */
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            padding: 20px;
+        .container {
             text-align: center;
-            max-width: 95vw; /* Use viewport width */
-            max-height: 95vh; /* Use viewport height */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center; /* Center canvas horizontally */
-            position: relative; /* Keep container content flow */
-            z-index: 1; /* Ensure game container is above profiles visually if needed */
         }
         canvas {
-            border: 3px solid #1E90FF; /* Dodger blue */
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
-            /* Let the container handle max-width/height */
-            max-width: 100%;
-            height: auto; /* Maintain aspect ratio */
-            display: block; /* Prevents extra space below canvas */
-            background-color: #ffffff; /* Add a white background to canvas in case images fail */
+            border: 2px solid #aaa;
+            background-color: #000; /* Black canvas background */
+            display: block; /* Prevents extra space below */
+            max-width: 100%; /* Make canvas responsive */
+            height: auto;
         }
         h1 {
-            color: #1E90FF;
-            /* Responsive font size using clamp */
-            font-size: clamp(2rem, 5vw, 3rem); /* min, preferred, max */
-            margin-top: 0; /* Adjust spacing */
-            margin-bottom: 15px; /* Space below title */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            color: #00ffff; /* Cyan title */
+            margin-bottom: 10px;
         }
-        /* Instructions Styling - kept static below canvas */
-        .instructions-footer {
-            background-color: rgba(30, 144, 255, 0.8); /* Use theme color - slightly more opaque */
-            border-radius: 10px;
-            padding: 10px 15px; /* Slightly more padding */
-            margin-top: 15px; /* Space above instructions */
-            font-size: clamp(0.85rem, 2.5vw, 1.05rem); /* Slightly adjusted responsive text */
-            color: white; /* White text on blue background */
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
-            line-height: 1.4; /* Ensure lines aren't too cramped */
-        }
-        .instructions-footer p {
-             margin: 2px 0; /* Small margin between instruction lines */
-        }
-
-        /* Character Profiles - Positioned outside the main container */
-        .character-profile {
-            position: fixed; /* Fixed position relative to viewport */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 0; /* Behind game container */
-            pointer-events: none; /* Prevent interaction with profiles */
-            opacity: 0.8; /* Slightly less visible */
-            transition: opacity 0.3s ease;
-        }
-
-        .character-profile img {
-             /* Adjust size as needed */
-            width: clamp(100px, 18vw, 220px); /* Slightly smaller max size */
-            height: auto;
-            margin-bottom: 5px;
-            filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.4));
-        }
-        .character-profile .name {
-            color: white;
-            font-size: clamp(1rem, 2.5vw, 1.6rem); /* Slightly smaller */
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        }
-
-        /* Positioning specific profiles */
-        #eric-profile {
-            left: 1vw; /* Position from left edge */
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        #mickey-profile {
-            right: 1vw; /* Position from right edge */
-            top: 30%; /* Adjust vertical position */
-            transform: translateY(-50%);
-        }
-        #crab-profile {
-            right: 1vw; /* Position from right edge */
-            bottom: 5%; /* Position from bottom */
-        }
-
-        /* Media Query for smaller screens */
-        @media (max-width: 800px) { /* Trigger breakpoint slightly earlier */
-             /* Make profiles smaller/more transparent on smaller screens */
-            .character-profile {
-                 opacity: 0.4;
-                 /* Adjust width based on the character image size itself if needed */
-                 width: clamp(50px, 12vw, 80px);
-            }
-             .character-profile img {
-                 width: 100%; /* Let the container control the size */
-             }
-             #eric-profile { left: 0.5vw; }
-             #mickey-profile { right: 0.5vw; top: 25%;} /* Adjust position */
-             #crab-profile { right: 0.5vw; bottom: 2%;}
-
-            h1 { font-size: clamp(1.5rem, 6vw, 2rem); margin-bottom: 10px;}
-            .game-container { padding: 10px; }
-            .instructions-footer { margin-top: 10px; padding: 5px 10px; }
-        }
-         @media (max-height: 550px) { /* Adjust breakpoint for short screens */
-             /* Adjust layout for short screens */
-             h1 { margin-bottom: 5px; font-size: clamp(1.4rem, 5vh, 1.8rem); } /* Scale with height too */
-             .game-container { padding: 5px; }
-             .instructions-footer { margin-top: 5px; font-size: clamp(0.75rem, 2vh, 0.9rem); }
-             /* Optionally hide profiles on very short screens */
-              .character-profile { display: none; }
-         }
-
     </style>
 </head>
 <body>
-    <!-- Character Profiles -->
-    <div class="character-profile" id="eric-profile">
-        <img src="assets/ericProfile.png" alt="Eric">
-        <span class="name">Eric</span>
-    </div>
-    <div class="character-profile" id="mickey-profile">
-        <img src="assets/mickeyProfile.png" alt="Mickey">
-        <span class="name">Mickey</span>
-    </div>
-    <div class="character-profile" id="crab-profile">
-        <img src="assets/crabProfile.png" alt="Crab">
-        <span class="name">Fuckin' Crab</span>
-    </div>
-
-    <!-- Game Area -->
-    <div class="game-container">
-        <h1>Impossible Shark</h1>
-        <canvas id="gameCanvas" width="900" height="500">
-            <!-- Fallback message for older browsers -->
-            Your browser does not support the HTML5 canvas element. Please update your browser.
+    <div class="container">
+        <h1>Cosmic Collector</h1>
+        <canvas id="gameCanvas" width="800" height="600">
+            Your browser does not support the HTML5 canvas tag.
         </canvas>
-        <!-- Static Instructions Footer -->
-        <div class="instructions-footer">
-            <p>Punch Shark: [SPACE]</p>
-            <p>Crunch/Parry Crab: [DOWN ARROW]</p>
-            <p>Turn Eric: [LEFT ARROW] / [RIGHT ARROW]</p>
-            <p>(Toggle Debug Hitboxes: [D])</p>
-        </div>
     </div>
 
-    <!-- Game Script - IMPORTANT: Place at the end of body -->
     <script src="game.js"></script>
 </body>
 </html>
