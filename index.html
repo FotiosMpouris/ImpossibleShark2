@@ -113,8 +113,12 @@
              /* Make profiles smaller/more transparent on smaller screens */
             .character-profile {
                  opacity: 0.4;
-                 width: clamp(50px, 12vw, 80px); /* Significantly smaller */
+                 /* Adjust width based on the character image size itself if needed */
+                 width: clamp(50px, 12vw, 80px);
             }
+             .character-profile img {
+                 width: 100%; /* Let the container control the size */
+             }
              #eric-profile { left: 0.5vw; }
              #mickey-profile { right: 0.5vw; top: 25%;} /* Adjust position */
              #crab-profile { right: 0.5vw; bottom: 2%;}
