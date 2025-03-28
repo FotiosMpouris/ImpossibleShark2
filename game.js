@@ -1,49 +1,37 @@
-console.log("Game script started");
+console.log("Game script started - Creative Overhaul");
 
 document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('gameCanvas');
-    if (!canvas) {
-        console.error("Canvas element not found!");
-        return;
-    }
+    if (!canvas) { console.error("Canvas element not found!"); return; }
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error("Failed to get 2D context!");
-        return;
-    }
+    if (!ctx) { console.error("Failed to get 2D context!"); return; }
 
     // --- Constants ---
     const GROUND_HEIGHT = 100;
-    const PLAYER_START_X = -300;
     const PLAYER_Y_OFFSET = 400;
     const ENEMY_Y_OFFSET = 400;
     const CRAB_Y_OFFSET = 300;
     const MICKEY_MAX_HITS = 6;
     const CRAB_MAX_HITS = 2;
-    const PUNCH_ACTIVE_START_FRAME = 5; // When punch hitbox becomes active
-    const PUNCH_ACTIVE_END_FRAME = 20; // When punch hitbox deactivates
-    const CRUNCH_ACTIVE_START_FRAME = 5;
-    const CRUNCH_ACTIVE_END_FRAME = 20;
-    const ACTION_DURATION_FRAMES = 28; // Slightly shorter action times for snappier feel
+    const PUNCH_ACTIVE_FRAMES = 15; // Punch active duration
+    const CRUNCH_ACTIVE_FRAMES = 15; // Crunch active duration
+    const PARRY_WINDOW = 5;        // Frames for successful crab parry
+    const ACTION_DURATION_FRAMES = 28; // Total duration for punch/crunch animation (slightly faster)
+    const PINCHED_DURATION_FRAMES = 45; // Longer stun when pinched
     const HIT_STAGGER_FRAMES = 25;
     const DEATH_ANIMATION_FRAMES = 60;
-    const BONUS_DISPLAY_FRAMES = 60;
-    const INITIAL_CRAB_SPAWN_INTERVAL = 1100; // Slightly faster crab spawns
-    const GAME_SPEED_INCREASE = 0.00035; // Slightly faster ramp-up
-    const INSTRUCTION_DISPLAY_DURATION_MS = 7000; // 7 seconds
-
-    // --- NEW Feature Constants ---
-    const SHAKE_INTENSITY_HIT = 3;
-    const SHAKE_INTENSITY_KILL = 6;
-    const SHAKE_INTENSITY_PINCH = 8;
-    const SHAKE_DURATION_HIT = 8; // Frames
-    const SHAKE_DURATION_KILL = 15;
-    const SHAKE_DURATION_PINCH = 20;
-    const HIT_STOP_FRAMES_HIT = 2; // Frames to pause on normal hit
-    const HIT_STOP_FRAMES_KILL = 5; // Frames to pause on kill
-    const COMBO_MAX_TIMER = 120; // Frames (2 seconds at 60fps) to continue combo
-    const FLOATING_TEXT_DURATION = 70; // Frames
-    const FLOATING_TEXT_SPEED = 1.5; // Pixels per frame upward movement
+    const BONUS_DISPLAY_FRAMES = 50;
+    const INITIAL_CRAB_SPAWN_INTERVAL = 1000; // Faster initial crab spawn
+    const MIN_CRAB_SPAWN_INTERVAL = 300;     // Minimum crab spawn interval at high speed
+    const GAME_SPEED_INCREASE = 0.0004;      // Faster speed increase
+    const MAX_GAME_SPEED = 5;                // Cap game speed eventually
+    const INSTRUCTION_DISPLAY_DURATION_MS = 10000;
+    const SCREEN_SHAKE_MAGNITUDE_HIT = 2;
+    const SCREEN_SHAKE_DURATION_HIT = 5;
+    const SCREEN_SHAKE_MAGNITUDE_KILL = 5;
+    const SCREEN_SHAKE_DURATION_KILL = 10;
+    const FLOATING_SCORE_DURATION = 45; // Frames
+    const MIN_ENEMY_SPAWN_GAP = 200; // Min pixels between newly spawned enemy and existing one
 
     // --- Game State Variables ---
     let gameSpeed = 1;
@@ -57,118 +45,56 @@ document.addEventListener('DOMContentLoaded', function() {
     let showBonus = false;
     let bonusTimer = 0;
     let gameRunning = false;
-    let isPaused = false; // For potential future pause feature
-
-    // --- NEW Feature Variables ---
-    let shakeIntensity = 0;
-    let shakeDuration = 0;
-    let hitStopTimer = 0;
-    let comboCount = 0;
-    let comboTimer = 0;
-    let floatingTexts = []; // Array to hold { text, x, y, color, alpha, timer }
+    let debugMode = false; // Set to true to see hitboxes
+    let screenShake = { duration: 0, magnitude: 0 };
+    let floatingScores = []; // Array for displaying score popups
 
     // --- Utility Functions ---
-    const getCrabSpawnInterval = () => Math.floor(INITIAL_CRAB_SPAWN_INTERVAL / gameSpeed);
+    const getCrabSpawnInterval = () => Math.max(MIN_CRAB_SPAWN_INTERVAL, Math.floor(INITIAL_CRAB_SPAWN_INTERVAL / gameSpeed));
 
-    // --- Asset Loading (Keep structure from previous refactor) ---
+    // --- Asset Loading (using structure from previous example) ---
     const assets = { images: {}, audio: {} };
-    // loadImage, loadAudio functions (assuming they exist as before)
-    // --- (Include the loadImage and loadAudio functions from the previous refactor here) ---
+    // Assume loadImage, loadAudio, loadGameAssets, assignAssets are here (identical to previous refactor)
+    // --- (Paste asset loading functions here) ---
     function loadImage(key, src) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        console.log(`loadImage: Creating Image for key: ${key}, src: ${src}`); // Log creation
-        // DO NOT assign here: assets.images[key] = img; // Assign only on successful load
-        img.onload = () => {
-            console.log(`++++++ Image loaded successfully: ${key} (${src}), naturalWidth: ${img.naturalWidth}`); // Log success + size check
-            assets.images[key] = img; // Assign on load success
-            resolve(img);
-        };
-        img.onerror = (e) => { // Add event argument
-            console.error(`------ FAILED to load image: ${key} (${src})`, e); // Log failure
-            // Option 1: Reject (stops everything via Promise.all catch) - Good for debugging
-             reject(`Failed to load image: ${key} (${src})`);
-            // Option 2: Resolve anyway (game continues without image) - Might hide errors
-            // resolve(null); // Or resolve with a placeholder/null
-        };
-        img.src = src;
-    });
-}
-    function loadAudio(key, src, loop = false) { /* ... from previous */ }
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            assets.images[key] = img;
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                console.error(`Failed to load image: ${src}`);
+                reject(`Failed to load image: ${src}`);
+            };
+            img.src = src;
+        });
+    }
 
-    // --- Background ---
-    let oceanBackgroundX = 0;
-    let cloudBackgroundX = 0;
-    let distantBackgroundX = 0; // NEW parallax layer
+    function loadAudio(key, src, loop = false) {
+        return new Promise((resolve, reject) => {
+            const audio = new Audio(src);
+            assets.audio[key] = audio;
+            audio.loop = loop;
+            audio.addEventListener('canplaythrough', () => resolve(audio), { once: true });
+            audio.onerror = (e) => {
+                console.error(`Failed to load audio: ${src}`, e);
+                resolve(audio); // Don't reject
+            };
+            audio.load();
+        });
+    }
 
-    // --- Eric (Player) ---
-    const eric = {
-        x: PLAYER_START_X,
-        y: canvas.height - GROUND_HEIGHT - PLAYER_Y_OFFSET,
-        width: 900,
-        height: 500,
-        frameX: 0,
-        animationFrame: 0,
-        animationDelay: 14, // Slightly faster animation
-        state: 'walking', // walking, punching, punchingLeft, crunching, pinched
-        actionDuration: 0,
-        facingRight: true, // To handle sprite flipping for left punch
-        // Hitboxes
-        punchHitboxWidth: 110, // Slightly wider punch
-        punchHitboxOffset: 690, // Adjust position slightly
-        punchLeftHitboxWidth: 110,
-        punchLeftHitboxOffset: 100, // Hitbox position for left punch (relative to eric.x)
-        crunchHitboxWidth: 100,
-        crunchHitboxOffset: 700,
-        // Images
-        walkImages: [], punchImages: [], crunchImage: null, pinchedImage: null, currentPunchImage: null
-    };
-
-    // --- Mickey (Enemy 1) ---
-    const mickey = {
-        // ... (mostly same as before)
-        x: canvas.width,
-        y: canvas.height - GROUND_HEIGHT - ENEMY_Y_OFFSET,
-        width: 900, height: 500, frameX: 0, animationFrame: 0, animationDelay: 5,
-        baseSpeed: 2.1, // Slightly faster base
-        speed: 2.1, visible: true, state: 'walking', // walking, hit, dying
-        hitDuration: 0, deathFrame: 0, deathAnimationDuration: 0,
-        hitboxWidth: 100, hitboxOffset: 400,
-        walkImages: [], hitImage: null, dieImages: [],
-        punchEffectIndex: -1, punchEffectDuration: 0
-    };
-
-    // --- Crab (Enemy 2) ---
-    const crab = {
-        // ... (mostly same as before)
-         x: canvas.width, y: canvas.height - GROUND_HEIGHT - CRAB_Y_OFFSET,
-         width: 1000, height: 500, frameX: 0, animationFrame: 0, animationDelayBase: 9, // Faster walk
-         baseSpeed: 3.2, // Faster base
-         speed: 3.2, visible: false, state: 'walking', // walking, crunched, dying
-         hitCount: 0, deathFrame: 0, deathAnimationDuration: 0, crunchDuration: 0,
-         // Hitbox adjusted in collision check
-         walkImages: [], crunchImage: null, dieImages: []
-    };
-
-    // --- Punch Effects ---
-    const punchEffectImages = [];
-
-    // --- Load All Assets ---
     function loadGameAssets() {
         const imagePromises = [
             loadImage('oceanBackground', 'assets/ImpossibleLoop01.png'),
             loadImage('cloudBackground', 'assets/ImpossibleClouds01.png'),
-            loadImage('distantBackground', 'assets/ImpossibleSky01.png'), // NEW LAYER
-            // ... (rest of the images as before)
             loadImage('ericCrunch', 'assets/ericCrunch.png'),
             loadImage('ericPinched', 'assets/ericPinched.png'),
             loadImage('mickeyHit', 'assets/MickeyHit.png'),
-            loadImage('crabCrunch', 'assets/crabCrunch.png'),
+            loadImage('crabCrunch', 'assets/crabCrunch.png'), // This might be unused if parry kills instantly
             loadImage('bonus', 'assets/Bonus.png'),
             loadImage('ericPunch1', 'assets/ericPunch.png'),
             loadImage('ericPunch2', 'assets/ericPunch2.png'),
         ];
-        // Eric Walk, Mickey Walk/Die, Crab Walk/Die, Punch Effects (loops as before)
         for (let i = 1; i <= 8; i++) imagePromises.push(loadImage(`ericRun${i}`, `assets/EricRun${i}.png`));
         for (let i = 1; i <= 21; i++) imagePromises.push(loadImage(`mickeyWalk${i}`, `assets/MickeyWalk${i.toString().padStart(2, '0')}.png`));
         for (let i = 1; i <= 3; i++) imagePromises.push(loadImage(`mickeyDie${i}`, `assets/MickeyDie${i}.png`));
@@ -177,10 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 1; i <= 3; i++) imagePromises.push(loadImage(`punchEffect${i}`, `assets/PunchEffect${i}.png`));
 
         const audioPromises = [
-            // ... (rest of the audio as before)
             loadAudio('punch', 'assets/PunchSound.mp3'),
-            loadAudio('punchLeft', 'assets/PunchSound.mp3'), // Could use a different sound
-            loadAudio('fuckCrab', 'assets/fuckCrab.mp3'),
+            loadAudio('fuckCrab', 'assets/fuckCrab.mp3'), // Might repurpose for parry
             loadAudio('ericOuch', 'assets/ericOuch.mp3'),
             loadAudio('mickeyDeath', 'assets/deathSound.mp3'),
             loadAudio('bonus', 'assets/bonusSound.mp3'),
@@ -191,139 +115,223 @@ document.addEventListener('DOMContentLoaded', function() {
         return Promise.all([...imagePromises, ...audioPromises]);
     }
 
-    // --- Assign Loaded Assets ---
-    function assignAssets() {
-        // ... (assign assets as before, including the new ones if needed)
-        // Assign Eric
-        for (let i = 1; i <= 8; i++) eric.walkImages.push(assets.images[`ericRun${i}`]);
-        eric.punchImages.push(assets.images['ericPunch1']);
-        eric.punchImages.push(assets.images['ericPunch2']);
+     function assignAssets() {
+        eric.walkImages = []; for (let i = 1; i <= 8; i++) eric.walkImages.push(assets.images[`ericRun${i}`]);
+        eric.punchImages = [assets.images['ericPunch1'], assets.images['ericPunch2']];
         eric.crunchImage = assets.images['ericCrunch'];
         eric.pinchedImage = assets.images['ericPinched'];
-        // Assign Mickey
-        for (let i = 1; i <= 21; i++) mickey.walkImages.push(assets.images[`mickeyWalk${i}`]);
+
+        mickey.walkImages = []; for (let i = 1; i <= 21; i++) mickey.walkImages.push(assets.images[`mickeyWalk${i}`]);
         mickey.hitImage = assets.images['mickeyHit'];
-        for (let i = 1; i <= 3; i++) mickey.dieImages.push(assets.images[`mickeyDie${i}`]);
-        // Assign Crab
-        for (let i = 1; i <= 5; i++) crab.walkImages.push(assets.images[`crabWalk${i}`]);
-        crab.crunchImage = assets.images['crabCrunch'];
-        for (let i = 1; i <= 3; i++) crab.dieImages.push(assets.images[`crabDead${i}`]);
-        // Assign Punch Effects
-        for (let i = 1; i <= 3; i++) punchEffectImages.push(assets.images[`punchEffect${i}`]);
-        // Assign Sounds
-        assets.audio.mickeyNoises = [];
-        for (let i = 1; i <= 7; i++) assets.audio.mickeyNoises.push(assets.audio[`mickeyNoise${i}`]);
+        mickey.dieImages = []; for (let i = 1; i <= 3; i++) mickey.dieImages.push(assets.images[`mickeyDie${i}`]);
+
+        crab.walkImages = []; for (let i = 1; i <= 5; i++) crab.walkImages.push(assets.images[`crabWalk${i}`]);
+        crab.crunchImage = assets.images['crabCrunch']; // Used if parry fails but still hits
+        crab.dieImages = []; for (let i = 1; i <= 3; i++) crab.dieImages.push(assets.images[`crabDead${i}`]);
+
+        punchEffectImages = []; for (let i = 1; i <= 3; i++) punchEffectImages.push(assets.images[`punchEffect${i}`]);
+
+        assets.audio.mickeyNoises = []; for (let i = 1; i <= 7; i++) assets.audio.mickeyNoises.push(assets.audio[`mickeyNoise${i}`]);
         assets.audio.currentMickeyNoiseIndex = 0;
     }
+    // --- End Asset Loading ---
+
+
+    // --- Background ---
+    let oceanBackgroundX = 0;
+    let cloudBackgroundX = 0;
+
+    // --- Eric (Player) ---
+    const eric = {
+        x: canvas.width / 2 - 450, // Start Eric more centered conceptually
+        y: canvas.height - GROUND_HEIGHT - PLAYER_Y_OFFSET,
+        width: 900,
+        height: 500,
+        frameX: 0,
+        animationFrame: 0,
+        animationDelay: 12, // Slightly faster walk cycle
+        state: 'walking', // walking, punching, crunching, pinched
+        actionDuration: 0,
+        facingRight: true, // NEW: Direction tracking
+        // Hitboxes - Initial values, likely need tuning!
+        punchHitboxWidth: 120, // Slightly wider punch
+        punchHitboxOffset: 680, // Adjusted offset
+        crunchHitboxWidth: 100,
+        crunchHitboxOffset: 700,
+        // Images
+        walkImages: [], punchImages: [], crunchImage: null, pinchedImage: null,
+        currentPunchImage: null
+    };
+
+    // --- Mickey (Enemy 1) ---
+    const mickey = {
+        x: canvas.width,
+        y: canvas.height - GROUND_HEIGHT - ENEMY_Y_OFFSET,
+        width: 900, height: 500, frameX: 0,
+        animationFrame: 0, animationDelay: 4, // Faster walk
+        baseSpeed: 2.2, speed: 2.2, // Slightly faster base
+        visible: true, state: 'walking',
+        hitDuration: 0, deathFrame: 0, deathAnimationDuration: 0,
+        hitboxWidth: 100, hitboxOffset: 400,
+        walkImages: [], hitImage: null, dieImages: [],
+        punchEffectIndex: -1, punchEffectDuration: 0,
+        aggressionLevel: 0 // NEW: Visual change marker
+    };
+
+    // --- Crab (Enemy 2) ---
+    const crab = {
+        x: canvas.width,
+        y: canvas.height - GROUND_HEIGHT - CRAB_Y_OFFSET,
+        width: 1000, height: 500, frameX: 0,
+        animationFrame: 0, animationDelayBase: 9,
+        baseSpeed: 3.5, speed: 3.5, // Faster crab
+        visible: false, state: 'walking',
+        hitCount: 0, // Still used for non-parry hits
+        deathFrame: 0, deathAnimationDuration: 0,
+        crunchDuration: 0, // For non-parry crunch visual
+        // Hitbox (relative to crab.x) - Tuned slightly
+        hitboxWidth: crab.width * 0.5, // Smaller target
+        hitboxOffset: crab.width * 0.25, // Centered hitbox
+        walkImages: [], crunchImage: null, dieImages: []
+    };
+
+    // --- Punch Effects ---
+    let punchEffectImages = []; // Populated in assignAssets
 
     // --- Sound Playback Helper ---
-    function playSound(key) { /* ... same as before ... */ }
+    function playSound(key, volume = 1.0) {
+        const sound = assets.audio[key];
+        if (sound && sound.readyState >= 3) {
+            sound.currentTime = 0;
+            sound.volume = volume;
+            sound.play().catch(e => {}); // Ignore rapid playback errors
+        }
+    }
+
+    // --- Screen Shake ---
+    function triggerScreenShake(duration, magnitude) {
+        if (screenShake.duration <= 0) { // Don't override existing shake if longer
+            screenShake.duration = duration;
+            screenShake.magnitude = magnitude;
+        } else { // If already shaking, maybe add intensity?
+            screenShake.duration = Math.max(screenShake.duration, duration);
+            screenShake.magnitude = Math.max(screenShake.magnitude, magnitude);
+        }
+    }
+
+    // --- Floating Score ---
+    function addFloatingScore(text, x, y, color = 'white') {
+        floatingScores.push({
+            text: text,
+            x: x,
+            y: y,
+            duration: FLOATING_SCORE_DURATION,
+            alpha: 1.0,
+            color: color
+        });
+    }
+
+    function updateFloatingScores() {
+        for (let i = floatingScores.length - 1; i >= 0; i--) {
+            const fs = floatingScores[i];
+            fs.duration--;
+            fs.y -= 0.5; // Float upwards
+            fs.alpha = Math.max(0, fs.duration / FLOATING_SCORE_DURATION);
+            if (fs.duration <= 0) {
+                floatingScores.splice(i, 1);
+            }
+        }
+    }
+
+    function drawFloatingScores() {
+        ctx.font = 'bold 20px Arial';
+        floatingScores.forEach(fs => {
+            ctx.fillStyle = `rgba(${hexToRgb(fs.color)}, ${fs.alpha})`;
+            ctx.fillText(fs.text, fs.x, fs.y);
+        });
+    }
+    // Helper for color conversion
+    function hexToRgb(hex) {
+        hex = hex.replace(/^#/, '');
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        // Hacky map common color names
+        if (hex.toLowerCase() === 'white') return '255, 255, 255';
+        if (hex.toLowerCase() === 'gold') return '255, 215, 0';
+        if (hex.toLowerCase() === 'lightgreen') return '144, 238, 144';
+        if (hex.toLowerCase() === 'red') return '255, 0, 0';
+        return `${r}, ${g}, ${b}`; // Default if hex code provided
+    }
 
 
     // --- Game Loop ---
     function gameLoop() {
-        if (!gameRunning || isPaused) { // Check pause flag
-             if (gameRunning) requestAnimationFrame(gameLoop); // Keep loop going if paused for unpause
-            return;
+        if (!gameRunning) return;
+
+        // --- Pre-drawing state reset (like transform) ---
+        ctx.save(); // Save default state
+        // Apply screen shake
+        if (screenShake.duration > 0) {
+            const shakeX = (Math.random() - 0.5) * 2 * screenShake.magnitude;
+            const shakeY = (Math.random() - 0.5) * 2 * screenShake.magnitude;
+            ctx.translate(shakeX, shakeY);
+            screenShake.duration--;
         }
 
-        // --- Hit Stop Check ---
-        if (hitStopTimer > 0) {
-            hitStopTimer--;
-            // Only draw, skip updates
-            drawGame();
-            requestAnimationFrame(gameLoop);
-            return; // Skip update logic during hit stop
-        }
+        // --- Clearing ---
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear with potential shake offset
 
         // --- Updates ---
         updateBackground();
         updateEric();
         updateMickey();
         updateCrab();
-        updateGameSpeedAndScore(); // Contains frameCount++, combo timer
-        updateFloatingTexts(); // NEW
+        updateFloatingScores();
+        updateGameSpeedAndScore();
 
         // --- Drawing ---
-        drawGame(); // Encapsulate all drawing
+        drawBackground();
+        drawCrab();
+        drawMickey();
+        drawEric(); // Eric drawn potentially flipped
+        drawScore();
+        drawFloatingScores();
+        drawInstructions();
+        if (showBonus) drawBonus();
+
+        // --- Post-drawing state restore ---
+        ctx.restore(); // Restore to state before shake/transforms
 
         requestAnimationFrame(gameLoop);
     }
 
-    // --- Encapsulated Drawing Function ---
-    function drawGame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // --- Apply Screen Shake ---
-        let shakeOffsetX = 0;
-        let shakeOffsetY = 0;
-        if (shakeDuration > 0) {
-            shakeDuration--;
-            shakeOffsetX = (Math.random() - 0.5) * 2 * shakeIntensity;
-            shakeOffsetY = (Math.random() - 0.5) * 2 * shakeIntensity;
-            ctx.save();
-            ctx.translate(shakeOffsetX, shakeOffsetY);
-        }
-
-        // --- Draw Layers ---
-        drawBackground();
-        drawCrab();
-        drawMickey();
-        drawEric();
-        drawFloatingTexts(); // NEW
-        drawScoreAndCombo(); // Combined score and combo display
-        drawInstructions();
-        if (showBonus) drawBonus();
-
-        // --- Restore context after shake ---
-        if (shakeOffsetX !== 0 || shakeOffsetY !== 0) {
-            ctx.restore();
-        }
-    }
-
     // --- Update Functions ---
     function updateGameSpeedAndScore() {
-        gameSpeed += GAME_SPEED_INCREASE;
+        gameSpeed = Math.min(MAX_GAME_SPEED, gameSpeed + GAME_SPEED_INCREASE);
         frameCount++;
-
         if (showInstructions && (Date.now() - gameStartTime > INSTRUCTION_DISPLAY_DURATION_MS)) {
             showInstructions = false;
-        }
-
-        // --- Combo Timer Update ---
-        if (comboTimer > 0) {
-            comboTimer--;
-            if (comboTimer === 0) {
-                comboCount = 0; // Reset combo when timer runs out
-            }
         }
     }
 
     function updateBackground() {
-        // NEW: Distant Background (slowest)
-        distantBackgroundX -= gameSpeed * 0.1;
-        if (distantBackgroundX <= -canvas.width) distantBackgroundX += canvas.width;
-
-        // Clouds (medium)
-        cloudBackgroundX -= gameSpeed * 0.4; // Adjusted speed slightly
-        if (cloudBackgroundX <= -canvas.width) cloudBackgroundX += canvas.width;
-
-        // Ocean (fastest)
         oceanBackgroundX -= gameSpeed * 1.0;
         if (oceanBackgroundX <= -canvas.width) oceanBackgroundX += canvas.width;
+        cloudBackgroundX -= gameSpeed * 0.5;
+        if (cloudBackgroundX <= -canvas.width) cloudBackgroundX += canvas.width;
     }
 
     function updateEric() {
         // State Transitions
         if (eric.state !== 'walking') {
             eric.actionDuration++;
-            if (eric.actionDuration > ACTION_DURATION_FRAMES) {
+            const durationLimit = (eric.state === 'pinched') ? PINCHED_DURATION_FRAMES : ACTION_DURATION_FRAMES;
+            if (eric.actionDuration > durationLimit) {
                 eric.state = 'walking';
                 eric.actionDuration = 0;
-                eric.facingRight = true; // Reset facing direction
             }
-        } else {
-             eric.facingRight = true; // Ensure facing right when walking
         }
 
         // Animation
@@ -334,6 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 eric.animationFrame = 0;
             }
         }
+        // Eric remains stationary horizontally
     }
 
     function updateMickey() {
@@ -349,17 +358,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     mickey.animationFrame = 0;
                 }
                 if (mickey.x + mickey.width < 0) {
-                    comboCount = 0; // Reset combo if enemy passes
-                    comboTimer = 0;
                     respawnMickey();
                 }
                 break;
             case 'hit':
                 mickey.hitDuration++;
                 if (mickey.hitDuration <= HIT_STAGGER_FRAMES) {
-                    mickey.x += mickey.speed * 0.3; // Less knockback
+                    // Dynamic stagger based on aggression?
+                    mickey.x += mickey.speed * (0.4 + mickey.aggressionLevel * 0.1 + Math.random() * 0.1);
                 }
-                if (mickey.hitDuration > ACTION_DURATION_FRAMES) { // Recover based on action duration
+                if (mickey.hitDuration > ACTION_DURATION_FRAMES) { // Recover slightly faster
                     mickey.state = 'walking';
                     mickey.hitDuration = 0;
                 }
@@ -367,13 +375,13 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'dying':
                 mickey.deathAnimationDuration++;
                 const deathFrameDelay = DEATH_ANIMATION_FRAMES / mickey.dieImages.length;
-                mickey.deathFrame = Math.min(Math.floor(mickey.deathAnimationDuration / deathFrameDelay), mickey.dieImages.length - 1);
+                mickey.deathFrame = Math.min(mickey.dieImages.length - 1, Math.floor(mickey.deathAnimationDuration / deathFrameDelay));
                 if (mickey.deathAnimationDuration > DEATH_ANIMATION_FRAMES) {
                     respawnMickey();
                 }
                 break;
         }
-        // Punch Effect
+
         if (mickey.punchEffectIndex !== -1) {
             mickey.punchEffectDuration++;
             if (mickey.punchEffectDuration > ACTION_DURATION_FRAMES / 2) {
@@ -385,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCrab() {
-         if (crab.visible) {
+        if (crab.visible) {
             crab.speed = crab.baseSpeed * gameSpeed;
             const currentAnimationDelay = Math.max(1, Math.floor(crab.animationDelayBase / gameSpeed));
 
@@ -397,24 +405,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         crab.frameX = (crab.frameX + 1) % crab.walkImages.length;
                         crab.animationFrame = 0;
                     }
-                    // Pinch Check (more forgiving - check middle of Eric)
-                    if (crab.x + crab.width * 0.7 < eric.x + eric.width * 0.5) { // Crab claws past Eric's center
-                         if (!eric.pinched && eric.state !== 'pinched') {
-                            crabPassed();
-                        }
-                    }
-                     if (crab.x + crab.width < 0) { // Fully off screen
+                     // Check for passing Eric - more precise check needed for parry
+                    const ericFrontEdge = eric.x + (eric.facingRight ? eric.crunchHitboxOffset : eric.width - eric.crunchHitboxOffset - eric.crunchHitboxWidth); // Where crunch happens
+                    if (crab.x + crab.hitboxOffset < ericFrontEdge + 50 && // Crab's front hitbox near Eric's crunch zone
+                        crab.x + crab.hitboxOffset + crab.hitboxWidth > ericFrontEdge - 50) {
+                         // Crab is in the pinch zone, check if Eric is NOT crunching or pinched
+                         if (eric.state !== 'crunching' && eric.state !== 'pinched') {
+                             crabPassed(); // Pinch Eric
+                         }
+                    } else if (crab.x + crab.width < 0) { // Fully off screen left
                         crab.visible = false;
                         crabTimer = 0;
-                        comboCount = 0; // Reset combo if crab passes
-                        comboTimer = 0;
                     }
                     break;
-                 case 'crunched':
+                case 'crunched': // State after a non-parry crunch hit
                     crab.crunchDuration++;
-                    // Optional slight drift back
-                    crab.x += gameSpeed * 0.5;
-                    if (crab.crunchDuration > ACTION_DURATION_FRAMES * 0.8) { // Shorter crunch visual
+                    if (crab.crunchDuration > ACTION_DURATION_FRAMES / 1.5) { // Shorter visual stun
                         crab.state = 'walking';
                         crab.crunchDuration = 0;
                     }
@@ -422,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'dying':
                     crab.deathAnimationDuration++;
                     const deathFrameDelay = DEATH_ANIMATION_FRAMES / crab.dieImages.length;
-                    crab.deathFrame = Math.min(Math.floor(crab.deathAnimationDuration / deathFrameDelay), crab.dieImages.length - 1);
+                    crab.deathFrame = Math.min(crab.dieImages.length - 1, Math.floor(crab.deathAnimationDuration / deathFrameDelay));
                     if (crab.deathAnimationDuration > DEATH_ANIMATION_FRAMES) {
                         crab.visible = false;
                         crab.hitCount = 0;
@@ -430,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     break;
             }
-            checkEricCrunchCollision();
+            checkEricCrunchCollision(); // Check collision regardless of state (for parry)
         } else {
             crabTimer++;
             if (crabTimer >= getCrabSpawnInterval()) {
@@ -440,442 +446,430 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function crabPassed() {
+        if (eric.state === 'pinched') return; // Already pinched
         crab.visible = false; // Disappears immediately
         eric.state = 'pinched';
         eric.actionDuration = 0;
-        score = Math.max(0, score - 5);
-        playSound('ericOuch');
-        triggerShake(SHAKE_INTENSITY_PINCH, SHAKE_DURATION_PINCH); // Shake on pinch
-        comboCount = 0; // Reset combo on getting hit
-        comboTimer = 0;
-        addFloatingText("-5", eric.x + eric.width / 2, eric.y + 100, 'red');
+        score = Math.max(0, score - 10); // Harsher penalty
+        playSound('ericOuch', 1.0);
+        triggerScreenShake(SCREEN_SHAKE_DURATION_HIT * 2, SCREEN_SHAKE_MAGNITUDE_HIT); // Shake when pinched
+        addFloatingScore("-10", eric.x + eric.width / 2, eric.y + 50, 'red');
         crabTimer = 0;
-    }
-
-    // --- NEW: Floating Text Update ---
-    function updateFloatingTexts() {
-        for (let i = floatingTexts.length - 1; i >= 0; i--) {
-            const txt = floatingTexts[i];
-            txt.timer--;
-            txt.y -= FLOATING_TEXT_SPEED; // Move up
-            txt.alpha = txt.timer / FLOATING_TEXT_DURATION; // Fade out
-
-            if (txt.timer <= 0) {
-                floatingTexts.splice(i, 1); // Remove expired text
-            }
-        }
     }
 
     // --- Collision Detection ---
     function checkEricPunchCollision() {
-        if (!mickey.visible || mickey.state !== 'walking') return;
-
-        let isPunching = false;
-        let punchHitbox = {};
-
-        // Check Right Punch
-        if (eric.state === 'punching' &&
-            eric.actionDuration >= PUNCH_ACTIVE_START_FRAME &&
-            eric.actionDuration <= PUNCH_ACTIVE_END_FRAME)
+        if (mickey.visible && mickey.state === 'walking' &&
+            eric.state === 'punching' &&
+            eric.actionDuration > 2 && eric.actionDuration <= PUNCH_ACTIVE_FRAMES + 2) // Active frames
         {
-            isPunching = true;
-            punchHitbox = {
-                x: eric.x + eric.punchHitboxOffset,
-                y: eric.y,
-                width: eric.punchHitboxWidth,
-                height: eric.height * 0.8 // Punch doesn't usually hit feet
-            };
-        }
-        // Check Left Punch
-        else if (eric.state === 'punchingLeft' &&
-                 eric.actionDuration >= PUNCH_ACTIVE_START_FRAME &&
-                 eric.actionDuration <= PUNCH_ACTIVE_END_FRAME)
-        {
-             isPunching = true;
-             punchHitbox = {
-                x: eric.x + eric.punchLeftHitboxOffset,
-                y: eric.y,
-                width: eric.punchLeftHitboxWidth,
-                height: eric.height * 0.8
-             };
-        }
+            let punchX;
+            if (eric.facingRight) {
+                punchX = eric.x + eric.punchHitboxOffset;
+            } else {
+                // Mirrored hitbox from left edge
+                punchX = eric.x + eric.width - eric.punchHitboxOffset - eric.punchHitboxWidth;
+            }
+            const punchHitbox = { x: punchX, y: eric.y + 150, width: eric.punchHitboxWidth, height: eric.height - 300 }; // Adjusted Y/Height
+            const mickeyHitbox = { x: mickey.x + mickey.hitboxOffset, y: mickey.y, width: mickey.hitboxWidth, height: mickey.height };
 
-        if (isPunching) {
-            const mickeyHitbox = {
-                x: mickey.x + mickey.hitboxOffset,
-                y: mickey.y,
-                width: mickey.hitboxWidth,
-                height: mickey.height
-            };
-
-            // AABB collision check
             if (punchHitbox.x < mickeyHitbox.x + mickeyHitbox.width &&
                 punchHitbox.x + punchHitbox.width > mickeyHitbox.x &&
                 punchHitbox.y < mickeyHitbox.y + mickeyHitbox.height &&
                 punchHitbox.y + punchHitbox.height > mickeyHitbox.y)
             {
-                 // Push Mickey back slightly relative to punch direction
-                 if (eric.state === 'punching') {
-                    mickey.x = punchHitbox.x + punchHitbox.width - mickey.hitboxOffset + 15; // Push right
-                 } else { // punchingLeft
-                     // No push back needed, Mickey is already moving away mostly
-                 }
-                hitMickey();
+                // Push back slightly further
+                mickey.x = punchHitbox.x + punchHitbox.width - mickey.hitboxOffset + (eric.facingRight ? 20 : -mickey.width - 20); // Adjust push based on direction
+                 hitMickey(punchHitbox.x + punchHitbox.width / 2, punchHitbox.y + punchHitbox.height / 2); // Pass hit location
             }
         }
     }
 
     function checkEricCrunchCollision() {
-         if (crab.visible && crab.state === 'walking' &&
-            eric.state === 'crunching' &&
-            eric.actionDuration >= CRUNCH_ACTIVE_START_FRAME &&
-            eric.actionDuration <= CRUNCH_ACTIVE_END_FRAME)
-        {
-             const crunchHitbox = {
-                x: eric.x + eric.crunchHitboxOffset,
-                y: eric.y + eric.height * 0.65, // Crunch lower
-                width: eric.crunchHitboxWidth,
-                height: eric.height * 0.35
-            };
-            // More generous crab hitbox
-            const crabHitbox = {
-                x: crab.x + crab.width * 0.1,
-                y: crab.y + crab.height * 0.3, // Hit lower part of crab
-                width: crab.width * 0.8,
-                height: crab.height * 0.7
-            };
+        if (crab.visible && crab.state === 'walking' && eric.state === 'crunching') {
+             let crunchX;
+             if (eric.facingRight) {
+                 crunchX = eric.x + eric.crunchHitboxOffset;
+             } else {
+                 crunchX = eric.x + eric.width - eric.crunchHitboxOffset - eric.crunchHitboxWidth;
+             }
+             // Crunch hitbox lower to the ground
+             const crunchHitbox = { x: crunchX, y: eric.y + eric.height * 0.75, width: eric.crunchHitboxWidth, height: eric.height * 0.25 };
+             const crabHitbox = { x: crab.x + crab.hitboxOffset, y: crab.y, width: crab.hitboxWidth, height: crab.height * 0.6 }; // Hitbox lower half of crab
 
              if (crunchHitbox.x < crabHitbox.x + crabHitbox.width &&
-                crunchHitbox.x + crunchHitbox.width > crabHitbox.x &&
-                crunchHitbox.y < crabHitbox.y + crabHitbox.height &&
-                crunchHitbox.y + crunchHitbox.height > crabHitbox.y)
+                 crunchHitbox.x + crunchHitbox.width > crabHitbox.x &&
+                 crunchHitbox.y < crabHitbox.y + crabHitbox.height &&
+                 crunchHitbox.y + crunchHitbox.height > crabHitbox.y)
              {
-                hitCrab();
+                 // Check for PARRY window
+                 const isParry = eric.actionDuration > 2 && eric.actionDuration <= PARRY_WINDOW + 2;
+
+                 // Check if crunch is active
+                 const isCrunchActive = eric.actionDuration > 2 && eric.actionDuration <= CRUNCH_ACTIVE_FRAMES + 2;
+
+                 if (isParry) {
+                     parryCrab(crunchHitbox.x + crunchHitbox.width / 2, crunchHitbox.y + crunchHitbox.height / 2);
+                 } else if (isCrunchActive) {
+                     // Normal crunch hit if not a parry but still in active frames
+                     hitCrab(crunchHitbox.x + crunchHitbox.width / 2, crunchHitbox.y + crunchHitbox.height / 2);
+                 }
              }
         }
     }
 
-
     // --- Hit Handling ---
-    function hitMickey() {
+    function hitMickey(hitX, hitY) {
         mickeyHitCount++;
-        let scoreToAdd = 1;
-        comboCount++;
-        comboTimer = COMBO_MAX_TIMER; // Reset combo timer on hit
-        scoreToAdd *= Math.max(1, Math.floor(comboCount / 5)); // Score multiplier every 5 combo points
+        score++;
+        playSound('punch', 0.8);
+        triggerScreenShake(SCREEN_SHAKE_DURATION_HIT, SCREEN_SHAKE_MAGNITUDE_HIT);
+        addFloatingScore("+1", hitX, hitY, 'white');
 
-        score += scoreToAdd;
-        addFloatingText(`+${scoreToAdd}`, mickey.x + mickey.hitboxOffset + mickey.hitboxWidth / 2, mickey.y + 100, 'yellow');
-        playSound(eric.state === 'punchingLeft' ? 'punchLeft' : 'punch'); // Use correct punch sound
+        mickey.aggressionLevel = Math.min(3, mickey.aggressionLevel + 0.5); // Increase aggression
 
         if (mickeyHitCount >= MICKEY_MAX_HITS) {
             mickey.state = 'dying';
             mickey.deathFrame = 0;
             mickey.deathAnimationDuration = 0;
             playSound('mickeyDeath');
-            triggerShake(SHAKE_INTENSITY_KILL, SHAKE_DURATION_KILL); // Stronger shake on kill
-            triggerHitStop(HIT_STOP_FRAMES_KILL); // Longer hit stop on kill
-
-            let bonusScore = 10 * Math.max(1, Math.floor(comboCount / 10)); // Bonus multiplier every 10 combo
-            score += bonusScore;
-            addFloatingText(`BONUS +${bonusScore}`, mickey.x + mickey.width/2, mickey.y + 50, 'gold');
-
+            triggerScreenShake(SCREEN_SHAKE_DURATION_KILL, SCREEN_SHAKE_MAGNITUDE_KILL);
+            score += 15; // More bonus points
+            addFloatingScore("+15 BONUS!", hitX, hitY - 30, 'gold');
             scoreColor = 'gold';
             setTimeout(() => { scoreColor = 'white'; }, 500);
-
             setTimeout(() => {
                 playSound('bonus');
                 showBonus = true;
                 bonusTimer = BONUS_DISPLAY_FRAMES;
-            }, 300); // Show bonus slightly faster
-
+            }, 300);
         } else {
             mickey.state = 'hit';
             mickey.hitDuration = 0;
             const noiseKey = `mickeyNoise${(assets.audio.currentMickeyNoiseIndex % assets.audio.mickeyNoises.length) + 1}`;
-            playSound(noiseKey);
+            playSound(noiseKey, 0.7 + mickey.aggressionLevel * 0.1); // Louder noise when more aggressive?
             assets.audio.currentMickeyNoiseIndex++;
-            triggerShake(SHAKE_INTENSITY_HIT, SHAKE_DURATION_HIT); // Normal shake on hit
-            triggerHitStop(HIT_STOP_FRAMES_HIT); // Short hit stop on hit
         }
-
-        // Trigger punch effect visual
         mickey.punchEffectIndex = Math.floor(Math.random() * punchEffectImages.length);
         mickey.punchEffectDuration = 0;
     }
 
-    function hitCrab() {
-        crab.hitCount++;
-        playSound('fuckCrab');
-        triggerShake(SHAKE_INTENSITY_HIT, SHAKE_DURATION_HIT);
-        triggerHitStop(HIT_STOP_FRAMES_HIT);
-        comboCount++; // Crunching adds to combo too
-        comboTimer = COMBO_MAX_TIMER;
+    function hitCrab(hitX, hitY) {
+         if (crab.state !== 'walking') return; // Don't hit if already hit/dying
 
-        if (crab.hitCount >= CRAB_MAX_HITS) {
-            crab.state = 'dying';
-            crab.deathFrame = 0;
-            crab.deathAnimationDuration = 0;
-            let crabScore = 3 * Math.max(1, Math.floor(comboCount / 5));
-            score += crabScore;
-            addFloatingText(`+${crabScore}`, crab.x + crab.width / 2, crab.y + 100, 'lightgreen');
-            scoreColor = 'lightgreen';
-            setTimeout(() => { scoreColor = 'white'; }, 500);
-            triggerShake(SHAKE_INTENSITY_KILL, SHAKE_DURATION_KILL); // Kill shake
-            triggerHitStop(HIT_STOP_FRAMES_KILL); // Kill hit stop
-        } else {
-            crab.state = 'crunched';
-            crab.crunchDuration = 0;
-             addFloatingText("Crunch!", crab.x + crab.width / 2, crab.y + 100, 'orange');
-            // Optional: Add slight knockback on crunch
-             crab.x += 30 * gameSpeed;
-        }
-    }
+         crab.hitCount++;
+         // Use a different sound for a normal crunch hit? Or just the parry?
+         // playSound('someCrunchSound'); // If you had one
+         triggerScreenShake(SCREEN_SHAKE_DURATION_HIT / 2, SCREEN_SHAKE_MAGNITUDE_HIT / 2); // Less shake
+
+         if (crab.hitCount >= CRAB_MAX_HITS) {
+             crab.state = 'dying';
+             crab.deathFrame = 0;
+             crab.deathAnimationDuration = 0;
+             score += 5; // More points for crab kill
+             addFloatingScore("+5", hitX, hitY, 'lightgreen');
+             scoreColor = 'lightgreen';
+             setTimeout(() => { scoreColor = 'white'; }, 500);
+              // Maybe a small kill shake
+             triggerScreenShake(SCREEN_SHAKE_DURATION_HIT, SCREEN_SHAKE_MAGNITUDE_HIT);
+         } else {
+             crab.state = 'crunched'; // Show brief visual stun
+             crab.crunchDuration = 0;
+             addFloatingScore("+0", hitX, hitY, '#aaa'); // Indicate hit but no score
+             // Knockback
+             crab.x += 30 * gameSpeed * (eric.facingRight ? 1 : -1);
+         }
+     }
+
+     function parryCrab(hitX, hitY) {
+         if (crab.state !== 'walking') return; // Can only parry walking crabs
+
+         crab.state = 'dying'; // Instantly dying on parry
+         crab.deathFrame = 0; // Start death anim
+         crab.deathAnimationDuration = 0;
+
+         score += 10; // Bonus points for parry
+         playSound('fuckCrab', 1.0); // Loud 'fuck crab' sound for parry!
+         triggerScreenShake(SCREEN_SHAKE_DURATION_KILL, SCREEN_SHAKE_MAGNITUDE_KILL * 1.2); // Big shake!
+         addFloatingScore("PARRY! +10", hitX, hitY - 20, 'cyan');
+         scoreColor = 'cyan'; // Flash cyan for parry
+         setTimeout(() => { scoreColor = 'white'; }, 600);
+
+         // Maybe add a visual effect like a flash?
+         // (Could draw a white rect briefly)
+     }
 
     // --- Respawn Logic ---
-    function respawnMickey() {
-        // ... (same as before, maybe increase base speed slightly more?)
-        mickey.x = canvas.width + Math.random() * 200;
-        mickey.visible = true;
-        mickey.state = 'walking';
-        mickey.baseSpeed += 0.15; // Faster increase
-        mickeyHitCount = 0; mickey.frameX = 0; mickey.deathAnimationDuration = 0;
-        mickey.hitDuration = 0; mickey.punchEffectIndex = -1;
-    }
+     function respawnMickey() {
+         let newX = canvas.width + Math.random() * 100;
+         // Ensure minimum gap from crab if crab is visible and near spawn area
+         if (crab.visible && crab.x > canvas.width / 2) {
+             newX = Math.max(newX, crab.x + crab.width + MIN_ENEMY_SPAWN_GAP);
+         }
+         mickey.x = newX;
+         mickey.visible = true;
+         mickey.state = 'walking';
+         mickey.baseSpeed += 0.15; // Faster increase
+         mickeyHitCount = 0;
+         mickey.frameX = 0;
+         mickey.deathAnimationDuration = 0; mickey.hitDuration = 0;
+         mickey.punchEffectIndex = -1;
+         mickey.aggressionLevel = 0; // Reset aggression
+     }
 
-    function respawnCrab() {
-        // ... (same as before, maybe increase base speed slightly?)
-        crab.x = canvas.width + Math.random() * 300;
-        crab.y = canvas.height - GROUND_HEIGHT - CRAB_Y_OFFSET;
-        crab.visible = true; crab.state = 'walking'; crab.hitCount = 0; crab.frameX = 0;
-        crab.deathAnimationDuration = 0; crab.crunchDuration = 0; crabTimer = 0;
-        crab.baseSpeed += 0.08; // Crab speed increases too
-    }
+     function respawnCrab() {
+         let newX = canvas.width + Math.random() * 200;
+         // Ensure minimum gap from mickey if mickey is visible and near spawn area
+          if (mickey.visible && mickey.x > canvas.width / 2) {
+             newX = Math.max(newX, mickey.x + mickey.width + MIN_ENEMY_SPAWN_GAP);
+         }
+         crab.x = newX;
+         crab.y = canvas.height - GROUND_HEIGHT - CRAB_Y_OFFSET;
+         crab.visible = true;
+         crab.state = 'walking';
+         crab.hitCount = 0; crab.frameX = 0;
+         crab.deathAnimationDuration = 0; crab.crunchDuration = 0;
+         crabTimer = 0;
+         crab.baseSpeed += 0.1; // Crabs get faster too
+     }
 
     // --- Draw Functions ---
     function drawBackground() {
-        // Draw layers back to front
-        if (assets.images.distantBackground) { // NEW Layer
-            ctx.drawImage(assets.images.distantBackground, distantBackgroundX, 0, canvas.width, canvas.height);
-            ctx.drawImage(assets.images.distantBackground, distantBackgroundX + canvas.width, 0, canvas.width, canvas.height);
-        }
-        if (assets.images.cloudBackground) {
-             ctx.drawImage(assets.images.cloudBackground, cloudBackgroundX, 0, canvas.width, canvas.height);
-             ctx.drawImage(assets.images.cloudBackground, cloudBackgroundX + canvas.width, 0, canvas.width, canvas.height);
-        }
-        if (assets.images.oceanBackground) {
-            ctx.drawImage(assets.images.oceanBackground, oceanBackgroundX, 0, canvas.width, canvas.height);
-            ctx.drawImage(assets.images.oceanBackground, oceanBackgroundX + canvas.width, 0, canvas.width, canvas.height);
-        }
+        ctx.drawImage(assets.images.cloudBackground, cloudBackgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(assets.images.cloudBackground, cloudBackgroundX + canvas.width, 0, canvas.width, canvas.height);
+        ctx.drawImage(assets.images.oceanBackground, oceanBackgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(assets.images.oceanBackground, oceanBackgroundX + canvas.width, 0, canvas.width, canvas.height);
     }
 
     function drawEric() {
-        let currentImage = eric.walkImages[eric.frameX] || eric.walkImages[0]; // Fallback
+        ctx.save(); // Save context for potential flipping
 
-        switch(eric.state) {
-            case 'punching':
-                currentImage = eric.currentPunchImage || eric.punchImages[0];
-                break;
-            case 'punchingLeft': // Use same punch images, but flip context
-                currentImage = eric.currentPunchImage || eric.punchImages[0];
-                break; // Actual drawing handles flip
-            case 'crunching':
-                currentImage = eric.crunchImage;
-                break;
-            case 'pinched':
-                currentImage = eric.pinchedImage;
-                break;
+        let currentImage = eric.walkImages[eric.frameX];
+        switch (eric.state) {
+            case 'punching': currentImage = eric.currentPunchImage; break;
+            case 'crunching': currentImage = eric.crunchImage; break;
+            case 'pinched': currentImage = eric.pinchedImage; break;
+            case 'walking': default: if (!currentImage) currentImage = eric.walkImages[0]; break;
         }
 
-        // --- Handle Sprite Flipping for Left Punch ---
-        let flip = (eric.state === 'punchingLeft');
-        if (flip) {
-            ctx.save();
-            // Translate to the pivot point (center of Eric's sprite), scale, then translate back
-            ctx.translate(eric.x + eric.width / 2, 0);
+        let drawX = eric.x;
+        if (!eric.facingRight) {
             ctx.scale(-1, 1); // Flip horizontally
-            ctx.translate(-(eric.x + eric.width / 2), 0);
+            drawX = -eric.x - eric.width; // Adjust X position for flipped drawing
         }
 
         if (currentImage) {
-             // Slightly tint red when pinched
-             let originalAlpha = ctx.globalAlpha;
-            if (eric.state === 'pinched' && eric.actionDuration % 10 < 5) { // Flashing effect
-                 ctx.globalAlpha = 0.8; // Make slightly transparent
-                 // Apply a red tint - more complex, maybe skip for now or use filter
-                 // ctx.filter = 'sepia(100%) saturate(300%) hue-rotate(-50deg)'; // Example filter
+            ctx.drawImage(currentImage, drawX, eric.y, eric.width, eric.height);
+        }
+
+        // --- DEBUG: Draw Hitboxes (also flipped) ---
+        if (debugMode) {
+            ctx.strokeStyle = 'red'; // Punch
+            ctx.lineWidth = 2;
+            if (eric.state === 'punching') {
+                let pX = drawX + (eric.facingRight ? eric.punchHitboxOffset : eric.width - eric.punchHitboxOffset - eric.punchHitboxWidth);
+                ctx.strokeRect(pX, eric.y + 150, eric.punchHitboxWidth, eric.height - 300);
             }
-
-            ctx.drawImage(currentImage, eric.x, eric.y, eric.width, eric.height);
-
-             // Reset alpha/filter if changed
-             ctx.globalAlpha = originalAlpha;
-             // ctx.filter = 'none';
+            ctx.strokeStyle = 'blue'; // Crunch
+            if (eric.state === 'crunching') {
+                let cX = drawX + (eric.facingRight ? eric.crunchHitboxOffset : eric.width - eric.crunchHitboxOffset - eric.crunchHitboxWidth);
+                ctx.strokeRect(cX, eric.y + eric.height * 0.75, eric.crunchHitboxWidth, eric.height * 0.25);
+                 // Draw Parry window indicator
+                 if(eric.actionDuration > 2 && eric.actionDuration <= PARRY_WINDOW + 2) {
+                     ctx.strokeStyle = 'cyan';
+                     ctx.strokeRect(cX - 5, eric.y + eric.height * 0.75 - 5, eric.crunchHitboxWidth + 10, eric.height * 0.25 + 10);
+                 }
+            }
+             ctx.lineWidth = 1;
         }
+        // --- END DEBUG ---
 
-        if (flip) {
-            ctx.restore(); // Restore context after flipping
-        }
-
-        // DEBUG Hitboxes (Add cases for left punch)
-        // ctx.strokeStyle = 'red';
-        // if (eric.state === 'punching') ctx.strokeRect(eric.x + eric.punchHitboxOffset, eric.y, eric.punchHitboxWidth, eric.height * 0.8);
-        // if (eric.state === 'punchingLeft') ctx.strokeRect(eric.x + eric.punchLeftHitboxOffset, eric.y, eric.punchLeftHitboxWidth, eric.height * 0.8);
-        // // ... crunch hitbox ...
+        ctx.restore(); // Restore context after drawing Eric (removes flip)
     }
 
-    function drawMickey() { /* ... mostly same as before ... */ }
-    function drawCrab() { /* ... mostly same as before ... */ }
+     function drawMickey() {
+         if (!mickey.visible) return;
+         let currentImage = null;
+         switch (mickey.state) {
+             case 'walking': currentImage = mickey.walkImages[mickey.frameX]; break;
+             case 'hit': currentImage = mickey.hitImage; break;
+             case 'dying': currentImage = mickey.dieImages[mickey.deathFrame]; break;
+         }
 
-    // --- NEW: Draw Floating Text ---
-    function drawFloatingTexts() {
-        ctx.save();
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        floatingTexts.forEach(txt => {
-            ctx.globalAlpha = txt.alpha;
-            ctx.fillStyle = txt.color;
-            ctx.fillText(txt.text, txt.x, txt.y);
-        });
-        ctx.restore();
-    }
+         // Aggression visual: slight red tint? (Subtle)
+         if (mickey.aggressionLevel > 1 && currentImage) {
+              ctx.save();
+              ctx.filter = `hue-rotate(-${mickey.aggressionLevel * 5}deg) saturate(1.${mickey.aggressionLevel})`; // Reddish tint
+          }
 
-    function drawScoreAndCombo() { // Renamed and updated
+         if (currentImage) {
+              ctx.drawImage(currentImage, mickey.x, mickey.y, mickey.width, mickey.height);
+         }
+
+         if (mickey.aggressionLevel > 1 && currentImage) {
+             ctx.restore(); // Restore filter
+         }
+
+
+         if (mickey.punchEffectIndex !== -1) {
+              const effectImage = punchEffectImages[mickey.punchEffectIndex];
+              if (effectImage) {
+                  const effectX = mickey.x + mickey.hitboxOffset + (mickey.hitboxWidth / 2) - 100;
+                  const effectY = mickey.y + mickey.height / 2 - 100;
+                  // Slightly scale effect based on hit?
+                  const scale = 1.0 + Math.random() * 0.1;
+                   ctx.drawImage(effectImage, effectX, effectY, 200 * scale, 200 * scale);
+              }
+         }
+
+         if (debugMode) {
+             ctx.strokeStyle = 'lime';
+             ctx.strokeRect(mickey.x + mickey.hitboxOffset, mickey.y, mickey.hitboxWidth, mickey.height);
+         }
+     }
+
+      function drawCrab() {
+         if (!crab.visible) return;
+         let currentImage = null;
+         switch (crab.state) {
+             case 'walking': currentImage = crab.walkImages[crab.frameX]; break;
+             case 'crunched': currentImage = crab.crunchImage; break;
+             case 'dying': currentImage = crab.dieImages[crab.deathFrame]; break;
+         }
+          if (currentImage) {
+              ctx.drawImage(currentImage, crab.x, crab.y, crab.width, crab.height);
+          }
+          if (debugMode) {
+              ctx.strokeStyle = 'yellow';
+              ctx.strokeRect(crab.x + crab.hitboxOffset, crab.y, crab.hitboxWidth, crab.height * 0.6);
+          }
+     }
+
+     function drawScore() { /* (Keep previous improved version) */
         const scoreText = `Score: ${score}`;
+        const textWidth = ctx.measureText(scoreText).width;
         const padding = 10;
+        const boxWidth = textWidth + padding * 2;
         const boxHeight = 30;
-        const scoreY = 10;
-
-        // Score Box
-        ctx.font = '20px Arial';
-        const scoreWidth = ctx.measureText(scoreText).width;
-        const scoreBoxWidth = scoreWidth + padding * 2;
-        const scoreBoxX = canvas.width - scoreBoxWidth - 15;
-        const scoreTextX = scoreBoxX + padding;
-        const scoreTextY = scoreY + boxHeight / 2 + 7;
+        const boxX = canvas.width - boxWidth - 15;
+        const boxY = 10;
+        const textX = boxX + padding;
+        const textY = boxY + boxHeight / 2 + 7;
 
         ctx.fillStyle = 'rgba(30, 144, 255, 0.7)';
-        ctx.fillRect(scoreBoxX, scoreY, scoreBoxWidth, boxHeight);
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
         ctx.fillStyle = scoreColor;
-        ctx.fillText(scoreText, scoreTextX, scoreTextY);
-
-        // Combo Box (only show if combo > 1)
-        if (comboCount > 1) {
-            const comboText = `Combo: ${comboCount}x`;
-            ctx.font = 'bold 18px Arial'; // Slightly smaller bold font for combo
-            const comboWidth = ctx.measureText(comboText).width;
-            const comboHeight = 25;
-            const comboY = scoreY + boxHeight + 5; // Position below score box
-            const comboPadding = 8;
-            const comboColor = `hsl(${Math.min(120, comboCount * 5)}, 100%, 60%)`; // Color changes with combo count (Green to Yellow to Reddish)
-            const comboAlpha = 0.6 + (comboTimer / COMBO_MAX_TIMER) * 0.4; // Fade out slightly as timer runs down
-
-            const comboBoxWidth = comboWidth + comboPadding * 2;
-            const comboBoxX = canvas.width - comboBoxWidth - 15; // Align with score box right edge
-            const comboTextX = comboBoxX + comboPadding;
-            const comboTextY = comboY + comboHeight / 2 + 6;
-
-            ctx.fillStyle = `rgba(0, 0, 0, ${comboAlpha * 0.8})`; // Semi-transparent black background
-            ctx.fillRect(comboBoxX, comboY, comboBoxWidth, comboHeight);
-            ctx.fillStyle = comboColor;
-            ctx.globalAlpha = comboAlpha;
-            ctx.fillText(comboText, comboTextX, comboTextY);
-            ctx.globalAlpha = 1.0; // Reset alpha
-        }
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'left'; // Ensure alignment is correct
+        ctx.fillText(scoreText, textX, textY);
     }
 
-    function drawInstructions() {
+    function drawInstructions() { /* (Keep previous improved version, add turn keys) */
         if (showInstructions) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(canvas.width / 2 - 250, 20, 500, 90); // Slightly larger box
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(canvas.width / 2 - 250, 20, 500, 100); // Wider box
 
             ctx.fillStyle = 'white';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Punch Right: [SPACE]', canvas.width / 2, 50);
-            ctx.fillText('Punch Left: [A] or [LEFT ARROW]', canvas.width / 2, 75); // NEW Control
-            ctx.fillText('Kill Crab: [S] or [DOWN ARROW]', canvas.width / 2, 100); // NEW Control Alt
+            ctx.fillText('Punch Shark: [SPACE]', canvas.width / 2, 50);
+            ctx.fillText('Crunch/Parry Crab: [DOWN]', canvas.width / 2, 75);
+            ctx.fillText('Turn: [LEFT] / [RIGHT] Arrows', canvas.width / 2, 100);
             ctx.textAlign = 'left';
         }
     }
 
-    function drawBonus() { /* ... same as before ... */ }
+    function drawBonus() { /* (Keep previous version) */
+        if (showBonus && assets.images.bonus) {
+            ctx.drawImage(assets.images.bonus, canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
+            bonusTimer--;
+            if (bonusTimer <= 0) showBonus = false;
+        }
+    }
+
 
     // --- Event Listeners ---
     function handleKeyDown(event) {
-         if (!gameRunning && assets.audio.gameMusic) startGameMusic();
-         if (!gameRunning || isPaused) return;
+         if (!gameRunning && assets.audio.gameMusic) { startGameMusic(); }
+         if (!gameRunning) return;
 
-        // Prevent default browser action for arrow keys and space
-        if (['Space', 'ArrowDown', 'ArrowLeft', 'KeyA', 'KeyS'].includes(event.code)) {
-            event.preventDefault();
-        }
+         // Allow turning even when punching/crunching? Or only when walking? Let's allow always.
+          if (event.code === 'ArrowLeft') {
+              eric.facingRight = false;
+          } else if (event.code === 'ArrowRight') {
+              eric.facingRight = true;
+          }
 
-        if (eric.state === 'walking') { // Can only act if walking
-            switch (event.code) {
-                case 'Space':
-                    eric.state = 'punching';
-                    eric.actionDuration = 0;
-                    eric.currentPunchImage = eric.punchImages[Math.floor(Math.random() * eric.punchImages.length)];
-                    // playSound('punch'); // Sound moved to hit connect
-                    break;
-                case 'KeyA': // NEW Punch Left
-                case 'ArrowLeft': // NEW Punch Left Alt
-                     eric.state = 'punchingLeft';
-                     eric.facingRight = false; // Set facing direction
+         // Only allow actions if walking
+         if (eric.state === 'walking') {
+             switch (event.code) {
+                 case 'Space':
+                     eric.state = 'punching';
                      eric.actionDuration = 0;
                      eric.currentPunchImage = eric.punchImages[Math.floor(Math.random() * eric.punchImages.length)];
-                     // playSound('punchLeft'); // Sound moved to hit connect
-                    break;
-                case 'KeyS': // NEW Crunch Alt
-                case 'ArrowDown':
-                    eric.state = 'crunching';
-                    eric.actionDuration = 0;
-                    break;
-            }
-        }
+                     // Play sound on hit now
+                     break;
+                 case 'ArrowDown':
+                     eric.state = 'crunching';
+                     eric.actionDuration = 0;
+                     // Play sound on hit/parry
+                     break;
+             }
+         }
+
+         // Debug toggle
+         if (event.code === 'KeyD') {
+             debugMode = !debugMode;
+             console.log("Debug mode:", debugMode);
+         }
     }
     document.addEventListener('keydown', handleKeyDown);
-    // User Interaction Start Listener (same as before)
-    function userInteractionStart() { /* ... same as before ... */ }
-    document.addEventListener('click', userInteractionStart, { once: true });
-    document.addEventListener('keydown', userInteractionStart, { once: true });
 
-    // --- Game Initialization & Start ---
-    function startGameMusic() { /* ... same as before ... */ }
-    function startGame() { /* ... same as before ... */ }
+     function userInteractionStart() {
+         if (!gameRunning && assets.audio.gameMusic) {
+             console.log("User interaction detected, attempting to start music/game.");
+             startGameMusic();
+         }
+         // Remove listeners after first interaction
+         document.removeEventListener('click', userInteractionStart);
+         document.removeEventListener('keydown', userInteractionStart, {capture: true}); // Use capture to potentially catch before game keydown
+     }
+     document.addEventListener('click', userInteractionStart, { once: true });
+     document.addEventListener('keydown', userInteractionStart, { once: true, capture: true });
 
-    // --- NEW Utility Functions ---
-    function triggerShake(intensity, duration) {
-        // Prioritize stronger shakes
-        if (intensity >= shakeIntensity) {
-            shakeIntensity = intensity;
-            shakeDuration = duration;
-        } else if (shakeDuration <= 0) { // Only apply weaker shake if not already shaking
-            shakeIntensity = intensity;
-            shakeDuration = duration;
+
+    // --- Game Initialization ---
+     function startGameMusic() { /* (Keep previous version) */
+        const music = assets.audio.gameMusic;
+        if (music && music.paused) {
+            music.play().then(() => {
+                console.log("Game music started successfully.");
+                if (!gameRunning) startGame();
+            }).catch(e => {
+                console.error("Error playing game music:", e);
+                 if (!gameRunning) { console.warn("Starting game without music."); startGame(); }
+            });
+        } else if (!gameRunning) {
+             startGame();
         }
     }
+     function startGame() { /* (Keep previous version) */
+         if (gameRunning) return;
+         console.log("Starting game loop - Creative Overhaul...");
+         gameStartTime = Date.now();
+         gameRunning = true;
+         // Reset key variables on restart if applicable
+         score = 0; gameSpeed = 1; frameCount = 0; mickey.baseSpeed = 2.2; crab.baseSpeed = 3.5;
+         // Position Eric initially
+         eric.x = canvas.width / 2 - eric.width / 2 + 150; // Adjust start pos slightly right
+         eric.facingRight = true;
+         // Ensure enemies are reset/hidden
+         mickey.visible = false; setTimeout(respawnMickey, 1000); // Delay initial spawn
+         crab.visible = false; crabTimer = 0; // Let crab spawn normally
 
-    function triggerHitStop(duration) {
-        // Don't override a longer hit stop with a shorter one
-        hitStopTimer = Math.max(hitStopTimer, duration);
-    }
-
-    function addFloatingText(text, x, y, color = 'white') {
-        floatingTexts.push({
-            text: text,
-            x: x,
-            y: y,
-            color: color,
-            alpha: 1,
-            timer: FLOATING_TEXT_DURATION
-        });
-        // Limit max floating texts to avoid clutter/performance issues
-        if (floatingTexts.length > 20) {
-            floatingTexts.shift(); // Remove the oldest one
-        }
-    }
+         gameLoop();
+     }
 
     // --- Load assets and then start ---
     console.log("Loading assets...");
@@ -883,13 +877,22 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(() => {
             console.log("All assets loaded.");
             assignAssets();
-            // Find the new background image if it exists
-            if (!assets.images.distantBackground) {
-                console.warn("Distant background image not loaded/found. Skipping enhanced parallax.");
-            }
-            console.log("Assets assigned. Ready to start game on user interaction or autoplay.");
+            console.log("Assets assigned. Ready for user interaction.");
+            // Display "Click or Press Key to Start" message?
+             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+             ctx.fillRect(canvas.width/2 - 150, canvas.height/2 - 30, 300, 60);
+             ctx.fillStyle = 'white';
+             ctx.font = 'bold 24px Arial';
+             ctx.textAlign = 'center';
+             ctx.fillText('Click or Press Key', canvas.width / 2, canvas.height / 2);
+             ctx.fillText('to Start!', canvas.width / 2, canvas.height / 2 + 25);
+             ctx.textAlign = 'left'; // Reset
         })
-        .catch(error => { /* ... error handling as before ... */ });
+        .catch(error => {
+            console.error("Fatal error during asset loading:", error);
+             ctx.fillStyle = 'red'; ctx.font = '20px Arial'; ctx.textAlign = 'center';
+             ctx.fillText('Error loading game assets. Please refresh.', canvas.width / 2, canvas.height / 2);
+        });
 
-    console.log("Game script finished initial setup.");
+    console.log("Game script finished initial setup - Creative Overhaul.");
 }); // End DOMContentLoaded
