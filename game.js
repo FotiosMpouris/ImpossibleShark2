@@ -74,7 +74,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const assets = { images: {}, audio: {} };
     // loadImage, loadAudio functions (assuming they exist as before)
     // --- (Include the loadImage and loadAudio functions from the previous refactor here) ---
-    function loadImage(key, src) { /* ... from previous */ }
+    function loadImage(key, src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        console.log(`loadImage: Creating Image for key: ${key}, src: ${src}`); // Log creation
+        // DO NOT assign here: assets.images[key] = img; // Assign only on successful load
+        img.onload = () => {
+            console.log(`++++++ Image loaded successfully: ${key} (${src}), naturalWidth: ${img.naturalWidth}`); // Log success + size check
+            assets.images[key] = img; // Assign on load success
+            resolve(img);
+        };
+        img.onerror = (e) => { // Add event argument
+            console.error(`------ FAILED to load image: ${key} (${src})`, e); // Log failure
+            // Option 1: Reject (stops everything via Promise.all catch) - Good for debugging
+             reject(`Failed to load image: ${key} (${src})`);
+            // Option 2: Resolve anyway (game continues without image) - Might hide errors
+            // resolve(null); // Or resolve with a placeholder/null
+        };
+        img.src = src;
+    });
+}
     function loadAudio(key, src, loop = false) { /* ... from previous */ }
 
     // --- Background ---
