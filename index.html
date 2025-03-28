@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impossible Shark</title>
+    <title>Impossible Shark - Overhaul</title>
     <style>
         body {
             background-color: #87CEEB; /* Sky blue */
@@ -40,6 +40,7 @@
             max-width: 100%;
             height: auto; /* Maintain aspect ratio */
             display: block; /* Prevents extra space below canvas */
+            background-color: #ffffff; /* Add a white background to canvas in case images fail */
         }
         h1 {
             color: #1E90FF;
@@ -51,18 +52,18 @@
         }
         /* Instructions Styling - kept static below canvas */
         .instructions-footer {
-            background-color: rgba(30, 144, 255, 0.7); /* Use theme color */
+            background-color: rgba(30, 144, 255, 0.8); /* Use theme color - slightly more opaque */
             border-radius: 10px;
-            padding: 8px 15px;
+            padding: 10px 15px; /* Slightly more padding */
             margin-top: 15px; /* Space above instructions */
-            font-size: clamp(0.9rem, 2.5vw, 1.1rem); /* Responsive text */
+            font-size: clamp(0.85rem, 2.5vw, 1.05rem); /* Slightly adjusted responsive text */
             color: white; /* White text on blue background */
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+            line-height: 1.4; /* Ensure lines aren't too cramped */
         }
         .instructions-footer p {
-             margin: 0; /* Remove default paragraph margin */
-             line-height: 1.4; /* Adjust line spacing if needed */
+             margin: 2px 0; /* Small margin between instruction lines */
         }
 
         /* Character Profiles - Positioned outside the main container */
@@ -72,28 +73,21 @@
             flex-direction: column;
             align-items: center;
             z-index: 0; /* Behind game container */
-             /* Prevent interaction with profiles */
-            pointer-events: none;
-             /* Add subtle animation */
-            opacity: 0.85;
+            pointer-events: none; /* Prevent interaction with profiles */
+            opacity: 0.8; /* Slightly less visible */
             transition: opacity 0.3s ease;
         }
-        /* Hover effect (optional) */
-        /* .character-profile:hover {
-             opacity: 1;
-        } */
 
         .character-profile img {
              /* Adjust size as needed */
-            width: clamp(100px, 20vw, 250px); /* Responsive width */
+            width: clamp(100px, 18vw, 220px); /* Slightly smaller max size */
             height: auto;
             margin-bottom: 5px;
-             /* Add filter for effect */
             filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.4));
         }
         .character-profile .name {
             color: white;
-            font-size: clamp(1rem, 3vw, 1.8rem);
+            font-size: clamp(1rem, 2.5vw, 1.6rem); /* Slightly smaller */
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
@@ -106,7 +100,7 @@
         }
         #mickey-profile {
             right: 1vw; /* Position from right edge */
-            top: 30%;
+            top: 30%; /* Adjust vertical position */
             transform: translateY(-50%);
         }
         #crab-profile {
@@ -115,29 +109,27 @@
         }
 
         /* Media Query for smaller screens */
-        @media (max-width: 768px) {
-             /* Hide profiles on smaller screens to avoid clutter */
+        @media (max-width: 800px) { /* Trigger breakpoint slightly earlier */
+             /* Make profiles smaller/more transparent on smaller screens */
             .character-profile {
-                 /* display: none; */
-                 /* OR make them smaller/transparent */
                  opacity: 0.4;
-                 width: clamp(50px, 15vw, 100px);
+                 width: clamp(50px, 12vw, 80px); /* Significantly smaller */
             }
              #eric-profile { left: 0.5vw; }
-             #mickey-profile { right: 0.5vw; top: 20%;}
+             #mickey-profile { right: 0.5vw; top: 25%;} /* Adjust position */
              #crab-profile { right: 0.5vw; bottom: 2%;}
 
             h1 { font-size: clamp(1.5rem, 6vw, 2rem); margin-bottom: 10px;}
             .game-container { padding: 10px; }
             .instructions-footer { margin-top: 10px; padding: 5px 10px; }
         }
-         @media (max-height: 500px) {
+         @media (max-height: 550px) { /* Adjust breakpoint for short screens */
              /* Adjust layout for short screens */
-             h1 { margin-bottom: 5px; }
+             h1 { margin-bottom: 5px; font-size: clamp(1.4rem, 5vh, 1.8rem); } /* Scale with height too */
              .game-container { padding: 5px; }
-             .instructions-footer { margin-top: 5px; }
+             .instructions-footer { margin-top: 5px; font-size: clamp(0.75rem, 2vh, 0.9rem); }
              /* Optionally hide profiles on very short screens */
-              /* .character-profile { display: none; } */
+              .character-profile { display: none; }
          }
 
     </style>
@@ -161,15 +153,19 @@
     <div class="game-container">
         <h1>Impossible Shark</h1>
         <canvas id="gameCanvas" width="900" height="500">
-            Your browser does not support the HTML5 canvas tag.
+            <!-- Fallback message for older browsers -->
+            Your browser does not support the HTML5 canvas element. Please update your browser.
         </canvas>
         <!-- Static Instructions Footer -->
         <div class="instructions-footer">
-            <p>Use [SPACE] to punch Shark | Use [DOWN ARROW] to kill Crab!</p>
+            <p>Punch Shark: [SPACE]</p>
+            <p>Crunch/Parry Crab: [DOWN ARROW]</p>
+            <p>Turn Eric: [LEFT ARROW] / [RIGHT ARROW]</p>
+            <p>(Toggle Debug Hitboxes: [D])</p>
         </div>
     </div>
 
-    <!-- Game Script -->
+    <!-- Game Script - IMPORTANT: Place at the end of body -->
     <script src="game.js"></script>
 </body>
 </html>
